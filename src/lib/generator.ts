@@ -75,23 +75,23 @@ function generateTypeSanitizer(
       const localName = variableNameFromPath(path);
       return `typeof(${value}) === 'object' && ${value} !== null
         ? (() => {
-          const ${localName} = ${value} as any;
-          return Object.fromEntries([
-            ${Object.entries(type.properties)
-              .map(([name, property]) => {
-                const propertyAccessor = `${localName}["${name}"]`;
-                let subtypeSanitizer = generateTypeSanitizer(
-                  property.type,
-                  propertyAccessor,
-                  [...path, name]
-                );
-                if (!property.required) {
-                  subtypeSanitizer = `${value} === undefined || (${subtypeSanitizer})`;
-                }
-                return `["${name}", ${subtypeSanitizer}]`;
-              })
-              .join(",")}
-          ])
+          const ${localName}: any = ${value};
+          const ${localName}_sanitized: any = {};
+          ${Object.entries(type.properties)
+            .map(([name, property]) => {
+              const propertyAccessor = `${localName}["${name}"]`;
+              let statement = `${localName}_sanitized["${name}"] = ${generateTypeSanitizer(
+                property.type,
+                propertyAccessor,
+                [...path, name]
+              )};`;
+              if (!property.required) {
+                statement = `if (${propertyAccessor} !== undefined) { ${statement} }`;
+              }
+              return statement;
+            })
+            .join("")}
+          return ${localName}_sanitized;
         })()
         : fail("${path.join(".")} is not an object", ${value})`;
     case "string":

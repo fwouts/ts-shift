@@ -18,27 +18,21 @@ export const Address: Type<Address> = {
   sanitize(__value__: unknown): Address {
     return typeof __value__ === "object" && __value__ !== null
       ? (() => {
-          const address = __value__ as any;
-          return Object.fromEntries([
-            [
-              "street",
-              typeof address["street"] === "string"
-                ? address["street"]
-                : fail("Address.street is not a string", address["street"]),
-            ],
-            [
-              "city",
-              typeof address["city"] === "string"
-                ? address["city"]
-                : fail("Address.city is not a string", address["city"]),
-            ],
-            [
-              "postCode",
-              typeof address["postCode"] === "number"
-                ? address["postCode"]
-                : fail("Address.postCode is not a number", address["postCode"]),
-            ],
-          ]);
+          const address: any = __value__;
+          const address_sanitized: any = {};
+          address_sanitized["street"] =
+            typeof address["street"] === "string"
+              ? address["street"]
+              : fail("Address.street is not a string", address["street"]);
+          address_sanitized["city"] =
+            typeof address["city"] === "string"
+              ? address["city"]
+              : fail("Address.city is not a string", address["city"]);
+          address_sanitized["postCode"] =
+            typeof address["postCode"] === "number"
+              ? address["postCode"]
+              : fail("Address.postCode is not a number", address["postCode"]);
+          return address_sanitized;
         })()
       : fail("Address is not an object", __value__);
   },
@@ -60,62 +54,52 @@ export const User: Type<User> = {
   sanitize(__value__: unknown): User {
     return typeof __value__ === "object" && __value__ !== null
       ? (() => {
-          const user = __value__ as any;
-          return Object.fromEntries([
-            [
-              "name",
-              typeof user["name"] === "object" && user["name"] !== null
-                ? (() => {
-                    const user_name = user["name"] as any;
-                    return Object.fromEntries([
-                      [
-                        "first",
-                        user["name"] === undefined ||
-                          (typeof user_name["first"] === "string"
-                            ? user_name["first"]
-                            : fail(
-                                "User.name.first is not a string",
-                                user_name["first"]
-                              )),
-                      ],
-                      [
-                        "last",
-                        typeof user_name["last"] === "string"
-                          ? user_name["last"]
-                          : fail(
-                              "User.name.last is not a string",
-                              user_name["last"]
-                            ),
-                      ],
-                    ]);
-                  })()
-                : fail("User.name is not an object", user["name"]),
-            ],
-            ["address", Address.sanitize(user["address"])],
-            [
-              "test",
-              typeof user["test"] === "object" && user["test"] !== null
-                ? (() => {
-                    const user_test = user["test"] as any;
-                    return Object.fromEntries([
-                      [
-                        "value",
-                        typeof user_test["value"] === "string"
-                          ? user_test["value"]
-                          : fail(
-                              "User.test.value is not a string",
-                              user_test["value"]
-                            ),
-                      ],
-                    ]);
-                  })()
-                : fail("User.test is not an object", user["test"]),
-            ],
-            [
-              "parent",
-              __value__ === undefined || User.sanitize(user["parent"]),
-            ],
-          ]);
+          const user: any = __value__;
+          const user_sanitized: any = {};
+          user_sanitized["name"] =
+            typeof user["name"] === "object" && user["name"] !== null
+              ? (() => {
+                  const user_name: any = user["name"];
+                  const user_name_sanitized: any = {};
+                  if (user_name["first"] !== undefined) {
+                    user_name_sanitized["first"] =
+                      typeof user_name["first"] === "string"
+                        ? user_name["first"]
+                        : fail(
+                            "User.name.first is not a string",
+                            user_name["first"]
+                          );
+                  }
+                  user_name_sanitized["last"] =
+                    typeof user_name["last"] === "string"
+                      ? user_name["last"]
+                      : fail(
+                          "User.name.last is not a string",
+                          user_name["last"]
+                        );
+                  return user_name_sanitized;
+                })()
+              : fail("User.name is not an object", user["name"]);
+          user_sanitized["address"] = Address.sanitize(user["address"]);
+          user_sanitized["test"] =
+            typeof user["test"] === "object" && user["test"] !== null
+              ? (() => {
+                  const user_test: any = user["test"];
+                  const user_test_sanitized: any = {};
+                  user_test_sanitized["value"] =
+                    typeof user_test["value"] === "string"
+                      ? user_test["value"]
+                      : fail(
+                          "User.test.value is not a string",
+                          user_test["value"]
+                        );
+                  return user_test_sanitized;
+                })()
+              : fail("User.test is not an object", user["test"]);
+          if (user["parent"] !== undefined) {
+            user_sanitized["parent"] = User.sanitize(user["parent"]);
+          }
+          return user_sanitized;
         })()
       : fail("User is not an object", __value__);
   },
