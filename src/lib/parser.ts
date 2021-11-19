@@ -81,9 +81,36 @@ export function parse(filePaths: string[]) {
         name,
       };
     }
-    if (type.flags === ts.TypeFlags.String) {
+    if (type.flags === ts.TypeFlags.Boolean) {
       return {
-        kind: "string",
+        kind: "boolean",
+      };
+    } else if (type.flags === ts.TypeFlags.BooleanLiteral) {
+      const intrinsicName = (type as any).intrinsicName;
+      switch (intrinsicName) {
+        case "false":
+          return {
+            kind: "literal",
+            value: false,
+          };
+        case "true":
+          return {
+            kind: "literal",
+            value: true,
+          };
+        default:
+          throw new Error(
+            `Boolean literal type with unexpected intrinsic name: ${intrinsicName}`
+          );
+      }
+    } else if (type.isNumberLiteral() || type.isStringLiteral()) {
+      return {
+        kind: "literal",
+        value: type.value,
+      };
+    } else if (type.flags === ts.TypeFlags.Null) {
+      return {
+        kind: "null",
       };
     } else if (type.flags === ts.TypeFlags.Number) {
       return {
@@ -109,6 +136,19 @@ export function parse(filePaths: string[]) {
       return {
         kind: "object",
         properties,
+      };
+    } else if (type.flags === ts.TypeFlags.String) {
+      return {
+        kind: "string",
+      };
+    } else if (type.flags === ts.TypeFlags.Undefined) {
+      return {
+        kind: "undefined",
+      };
+    } else if (type.isUnion()) {
+      return {
+        kind: "union",
+        types: type.types.map((subtype) => extractType(subtype)),
       };
     } else {
       throw new Error(`Unsupported type:\n${inspect(type)}`);

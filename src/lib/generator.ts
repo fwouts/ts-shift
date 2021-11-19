@@ -128,11 +128,9 @@ function generateTypeValidator(
         "."
       )} is not a boolean", ${value})`;
     case "literal":
-      return `typeof(${value}) === ${JSON.stringify(
-        type.value
-      )} || fail("${path.join(".")} must equal ${JSON.stringify(
-        type.value
-      )}", ${value})`;
+      return `${value} === ${JSON.stringify(type.value)} || fail("${path.join(
+        "."
+      )} must equal ${JSON.stringify(type.value)}", ${value})`;
     case "null":
       return `${value} === null || fail("${path.join(
         "."
@@ -168,25 +166,24 @@ function generateTypeValidator(
       )} is not undefined", ${value})`;
     case "union":
       return `(() => {
-          let valid = false;
-          let error: ValidationError | null = null;
-          ${type.types.map(
+        let error: ValidationError | null = null;
+        ${type.types
+          .map(
             (subtype, i) => `
-          try {
-            ${generateTypeValidator(subtype, value, [...path, i.toString(10)])}
-            valid = true;
-          } catch (e) {
-            if (!(e instanceof ValidationError)) {
-              throw e;
-            }
-            error = e;
+        try {
+          ${generateTypeValidator(subtype, value, [...path, i.toString(10)])}
+          return true;
+        } catch (e) {
+          if (!(e instanceof ValidationError)) {
+            throw e;
           }
-          if (!valid) {
-            throw error;
-          }
-          `
-          )}
-        })()`;
+          error = e;
+        }
+        `
+          )
+          .join("")}
+        throw error;
+      })()`;
     default:
       throw assertNever(type);
   }
@@ -237,8 +234,9 @@ function generateTypeSanitizer(
       return value;
     case "union":
       return `(() => {
-          ${type.types.map(
-            (subtype, i) => `
+          ${type.types
+            .map(
+              (subtype, i) => `
           try {
             if (${generateTypeValidator(subtype, value, [
               ...path,
@@ -257,7 +255,8 @@ function generateTypeSanitizer(
             }
           }
           `
-          )}
+            )
+            .join("")}
         })()`;
     default:
       throw assertNever(type);
