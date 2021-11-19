@@ -6,7 +6,7 @@ export interface User {
     last: string;
   };
   address: Address;
-  test: Box<string>;
+  test?: Box<string>;
   parent?: User;
 }
 

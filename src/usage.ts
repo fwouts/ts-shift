@@ -1,9 +1,14 @@
-import { Address } from "../generated/user";
+import { User } from "../generated/user";
 
-const address = Address.sanitize({
-  street: "123 George Street",
-  city: "Sydney",
-  postCode: 2000, // try "2000" instead to see error
-  irrelevant: 123,
+const user = User.sanitize({
+  name: {
+    last: "W",
+  },
+  address: {
+    street: "123 George Street",
+    city: "Sydney",
+    postCode: 2000, // try "2000" instead to see error
+    irrelevant: 123,
+  },
 });
-console.log(address);
+console.log(user);

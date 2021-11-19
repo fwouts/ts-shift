@@ -44,7 +44,7 @@ export type User = {
     last: string;
   };
   address: Address;
-  test: {
+  test?: {
     value: string;
   };
   parent?: User;
@@ -81,21 +81,23 @@ export const User: Type<User> = {
                 })()
               : fail("User.name is not an object", user["name"]);
           user_sanitized["address"] = Address.sanitize(user["address"]);
-          user_sanitized["test"] =
-            typeof user["test"] === "object" && user["test"] !== null
-              ? (() => {
-                  const user_test: any = user["test"];
-                  const user_test_sanitized: any = {};
-                  user_test_sanitized["value"] =
-                    typeof user_test["value"] === "string"
-                      ? user_test["value"]
-                      : fail(
-                          "User.test.value is not a string",
-                          user_test["value"]
-                        );
-                  return user_test_sanitized;
-                })()
-              : fail("User.test is not an object", user["test"]);
+          if (user["test"] !== undefined) {
+            user_sanitized["test"] =
+              typeof user["test"] === "object" && user["test"] !== null
+                ? (() => {
+                    const user_test: any = user["test"];
+                    const user_test_sanitized: any = {};
+                    user_test_sanitized["value"] =
+                      typeof user_test["value"] === "string"
+                        ? user_test["value"]
+                        : fail(
+                            "User.test.value is not a string",
+                            user_test["value"]
+                          );
+                    return user_test_sanitized;
+                  })()
+                : fail("User.test is not an object", user["test"]);
+          }
           if (user["parent"] !== undefined) {
             user_sanitized["parent"] = User.sanitize(user["parent"]);
           }
