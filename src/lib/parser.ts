@@ -36,7 +36,7 @@ export function parse(filePaths: string[]) {
     throw new Error(`Unable to build TypeScript program`);
   }
   const checker = program.getTypeChecker();
-  const types: Record<string, Type> = {};
+  const pendingTypes: Record<string, Type | { kind: "pending" }> = {};
   for (const filePath of filePaths) {
     const sourceFile = program.getSourceFile(filePath);
     if (!sourceFile) {
@@ -51,9 +51,16 @@ export function parse(filePaths: string[]) {
         if (hasTypeParameters(type)) {
           continue;
         }
-        types[statement.name.text] = extractType(type, true);
+        pendingTypes[statement.name.text] = extractType(type, true);
       }
     }
+  }
+  const types: Record<string, Type> = {};
+  for (const [name, type] of Object.entries(pendingTypes)) {
+    if (type.kind === "pending") {
+      throw new Error(`Unable to resolve type ${name}`);
+    }
+    types[name] = type;
   }
   return types;
 
@@ -65,7 +72,10 @@ export function parse(filePaths: string[]) {
       name !== "__type" &&
       !hasTypeParameters(type)
     ) {
-      types[name] = extractType(type, true);
+      if (!pendingTypes[name]) {
+        pendingTypes[name] = { kind: "pending" };
+        pendingTypes[name] = extractType(type, true);
+      }
       return {
         kind: "alias",
         name,

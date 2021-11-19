@@ -7,6 +7,7 @@ export interface User {
   };
   address: Address;
   test: Box<string>;
+  parent?: User;
 }
 
 interface Box<T> {

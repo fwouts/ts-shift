@@ -53,6 +53,7 @@ export type User = {
   test: {
     value: string;
   };
+  parent?: User;
 };
 
 export const User: Type<User> = {
@@ -109,6 +110,10 @@ export const User: Type<User> = {
                     ]);
                   })()
                 : fail("User.test is not an object", user["test"]),
+            ],
+            [
+              "parent",
+              __value__ === undefined || User.sanitize(user["parent"]),
             ],
           ]);
         })()
