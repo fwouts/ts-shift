@@ -3,20 +3,32 @@ import prettier from "prettier";
 import { Type } from "./types";
 
 export function generate(types: Record<string, Type>) {
-  const unformatted = Object.entries(types)
-    .map(
-      // TODO: Also remove unwanted properties.
-      ([name, type]) => `
+  // TODO: Don't use inspect for browser compatibility.
+  const unformatted =
+    `
+  import { inspect } from 'util';
+
+  function fail(message: string, value: unknown): never {
+    throw new Error(message + ':\\n' + inspect(value));
+  }
+
+  export type Type<T> = {
+    sanitize(value: unknown): T;
+  }
+  ` +
+    Object.entries(types)
+      .map(
+        ([name, type]) => `
         export type ${name} = ${generateTypeDeclaration(type)};
 
-        export const ${name} = {
-          sanitize(__value__: unknown): __value__ is ${name} {
-            return ${generateTypeValidator(type)}
+        export const ${name}: Type<${name}> = {
+          sanitize(__value__: unknown): ${name} {
+            return ${generateTypeSanitizer(type, "__value__", [name])}
           }
         };
         `
-    )
-    .join("\n");
+      )
+      .join("\n");
   return prettier.format(unformatted, {
     parser: "babel-ts",
   });
@@ -47,36 +59,51 @@ function generateTypeDeclaration(type: Type): string {
   }
 }
 
-function generateTypeValidator(type: Type): string {
+function generateTypeSanitizer(
+  type: Type,
+  value: string,
+  path: string[]
+): string {
   switch (type.kind) {
     case "alias":
-      return `${type.name}.sanitize(__value__)`;
+      return `${type.name}.sanitize(${value})`;
     case "number":
-      return `typeof(__value__) === 'number'`;
+      return `typeof(${value}) === 'number' ? ${value} : fail("${path.join(
+        "."
+      )} is not a number", ${value})`;
     case "object":
-      return (
-        `typeof(__value__) === 'object' && object !== null` +
-        Object.entries(type.properties)
-          .map(([name, property]) => {
-            let subtypeValidator = generateTypeValidator(property.type);
-            if (!property.required) {
-              subtypeValidator = `__value__ === undefined || (${subtypeValidator})`;
-            }
-            const propertyAccessor = `object["${name}"]`;
-            if ((subtypeValidator.match(/__value__/g) || []).length > 1) {
-              return `&& (__value__ => ${subtypeValidator})(${propertyAccessor})`;
-            } else {
-              return `&& (${subtypeValidator.replace(
-                "__value__",
-                propertyAccessor
-              )})`;
-            }
-          })
-          .join("")
-      );
+      const localName = variableNameFromPath(path);
+      return `typeof(${value}) === 'object' && ${value} !== null
+        ? (() => {
+          const ${localName} = ${value} as any;
+          return Object.fromEntries([
+            ${Object.entries(type.properties)
+              .map(([name, property]) => {
+                const propertyAccessor = `${localName}["${name}"]`;
+                let subtypeSanitizer = generateTypeSanitizer(
+                  property.type,
+                  propertyAccessor,
+                  [...path, name]
+                );
+                if (!property.required) {
+                  subtypeSanitizer = `${value} === undefined || (${subtypeSanitizer})`;
+                }
+                return `["${name}", ${subtypeSanitizer}]`;
+              })
+              .join(",")}
+          ])
+        })()
+        : fail("${path.join(".")} is not an object", ${value})`;
     case "string":
-      return `typeof(__value__) === 'string'`;
+      return `typeof(${value}) === 'string' ?  ${value} : fail("${path.join(
+        "."
+      )} is not a string", ${value})`;
     default:
       throw assertNever(type);
   }
+}
+
+function variableNameFromPath(path: string[]) {
+  const name = path.join("_");
+  return name.charAt(0).toLowerCase() + name.slice(1);
 }
