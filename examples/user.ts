@@ -6,4 +6,9 @@ export interface User {
     last: string;
   };
   address: Address;
+  test: Box<string>;
+}
+
+interface Box<T> {
+  value: T;
 }

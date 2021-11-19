@@ -47,10 +47,11 @@ export function parse(filePaths: string[]) {
         ts.isTypeAliasDeclaration(statement) ||
         ts.isInterfaceDeclaration(statement)
       ) {
-        types[statement.name.text] = extractType(
-          checker.getTypeAtLocation(statement),
-          true
-        );
+        const type = checker.getTypeAtLocation(statement);
+        if (hasTypeParameters(type)) {
+          continue;
+        }
+        types[statement.name.text] = extractType(type, true);
       }
     }
   }
@@ -58,7 +59,12 @@ export function parse(filePaths: string[]) {
 
   function extractType(type: ts.Type, ignoreTypeName = false): Type {
     const name = type.getSymbol()?.name;
-    if (!ignoreTypeName && name && name !== "__type") {
+    if (
+      !ignoreTypeName &&
+      name &&
+      name !== "__type" &&
+      !hasTypeParameters(type)
+    ) {
       types[name] = extractType(type, true);
       return {
         kind: "alias",
@@ -98,4 +104,12 @@ export function parse(filePaths: string[]) {
       throw new Error(`Unsupported type:\n${inspect(type)}`);
     }
   }
+}
+
+function hasTypeParameters(type: ts.Type) {
+  // Note: These properties are undocumented.
+  return (
+    ((type as any).typeParameters || []).length > 0 ||
+    ((type as any).resolvedTypeArguments || []).length > 0
+  );
 }

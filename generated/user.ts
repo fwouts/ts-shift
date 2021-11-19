@@ -50,6 +50,9 @@ export type User = {
     last: string;
   };
   address: Address;
+  test: {
+    value: string;
+  };
 };
 
 export const User: Type<User> = {
@@ -88,6 +91,25 @@ export const User: Type<User> = {
                 : fail("User.name is not an object", user["name"]),
             ],
             ["address", Address.sanitize(user["address"])],
+            [
+              "test",
+              typeof user["test"] === "object" && user["test"] !== null
+                ? (() => {
+                    const user_test = user["test"] as any;
+                    return Object.fromEntries([
+                      [
+                        "value",
+                        typeof user_test["value"] === "string"
+                          ? user_test["value"]
+                          : fail(
+                              "User.test.value is not a string",
+                              user_test["value"]
+                            ),
+                      ],
+                    ]);
+                  })()
+                : fail("User.test is not an object", user["test"]),
+            ],
           ]);
         })()
       : fail("User is not an object", __value__);
