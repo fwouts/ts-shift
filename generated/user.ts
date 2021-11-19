@@ -21,6 +21,7 @@ export interface ErrorCatcher {
 }
 
 export type Type<T> = {
+  create(value: T): T;
   sanitize<S = T>(value: S): T;
   validate<S = T>(
     value: S,
@@ -37,6 +38,10 @@ export type Address = {
 };
 
 export const Address: Type<Address> = {
+  create(__value__: Address) {
+    Address.validate(__value__);
+    return __value__;
+  },
   sanitize(__value__: unknown) {
     Address.validate(__value__);
     return (() => {
@@ -94,6 +99,10 @@ export type User = {
 };
 
 export const User: Type<User> = {
+  create(__value__: User) {
+    User.validate(__value__);
+    return __value__;
+  },
   sanitize(__value__: unknown) {
     User.validate(__value__);
     return (() => {

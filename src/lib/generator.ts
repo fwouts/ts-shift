@@ -29,6 +29,7 @@ export function generate(types: Record<string, Type>) {
   }
 
   export type Type<T> = {
+    create(value: T): T;
     sanitize<S = T>(value: S): T;
     validate<S = T>(value: S, options?: {
       errorCatcher?: ErrorCatcher
@@ -41,6 +42,10 @@ export function generate(types: Record<string, Type>) {
         export type ${name} = ${generateTypeDeclaration(type)};
 
         export const ${name}: Type<${name}> = {
+          create(__value__: ${name}) {
+            ${name}.validate(__value__);
+            return __value__;
+          },
           sanitize(__value__: unknown) {
             ${name}.validate(__value__);
             return ${generateTypeSanitizer(type, "__value__", [name])}
