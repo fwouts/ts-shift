@@ -104,6 +104,10 @@ function generateTypeDeclaration(type: Type): string {
       return `string`;
     case "undefined":
       return "undefined";
+    case "union":
+      return type.types
+        .map((subtype) => `(${generateTypeDeclaration(subtype)})`)
+        .join("|");
     default:
       throw assertNever(type);
   }
@@ -162,6 +166,27 @@ function generateTypeValidator(
       return `${value} === undefined || fail("${path.join(
         "."
       )} is not undefined", ${value})`;
+    case "union":
+      return `(() => {
+          let valid = false;
+          let error: ValidationError | null = null;
+          ${type.types.map(
+            (subtype, i) => `
+          try {
+            ${generateTypeValidator(subtype, value, [...path, i.toString(10)])}
+            valid = true;
+          } catch (e) {
+            if (!(e instanceof ValidationError)) {
+              throw e;
+            }
+            error = e;
+          }
+          if (!valid) {
+            throw error;
+          }
+          `
+          )}
+        })()`;
     default:
       throw assertNever(type);
   }
@@ -210,6 +235,30 @@ function generateTypeSanitizer(
       return value;
     case "undefined":
       return value;
+    case "union":
+      return `(() => {
+          ${type.types.map(
+            (subtype, i) => `
+          try {
+            if (${generateTypeValidator(subtype, value, [
+              ...path,
+              i.toString(10),
+            ])}) {
+              return ${generateTypeSanitizer(subtype, value, [
+                ...path,
+                i.toString(10),
+              ])}
+            }
+          } catch (e) {
+            if (e instanceof ValidationError) {
+              // Ignore, another subtype will be fine.
+            } else {
+              throw e;
+            }
+          }
+          `
+          )}
+        })()`;
     default:
       throw assertNever(type);
   }

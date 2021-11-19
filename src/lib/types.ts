@@ -28,6 +28,10 @@ export type Type =
     }
   | {
       kind: "undefined";
+    }
+  | {
+      kind: "union";
+      types: Type[];
     };
 
 export type ObjectProperty = {
