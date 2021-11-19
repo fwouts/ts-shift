@@ -4,7 +4,8 @@
   "author": "François Wouts <f@zenc.io>",
   "license": "MIT",
   "scripts": {
-    "dev": "ts-node-dev --respawn --watch examples src/main.ts"
+    "dev:generate": "ts-node-dev --respawn --watch examples src/main.ts",
+    "dev:usage": "ts-node-dev --respawn src/usage.ts"
   },
   "dependencies": {
     "assert-never": "^1.2.1",
