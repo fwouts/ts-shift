@@ -13,7 +13,7 @@ export function generate(types: Record<string, Type>) {
   }
 
   export type Type<T> = {
-    sanitize(value: unknown): T;
+    sanitize<S = T>(value: S): T;
   }
   ` +
     Object.entries(types)

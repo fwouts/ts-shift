@@ -5,7 +5,7 @@ function fail(message: string, value: unknown): never {
 }
 
 export type Type<T> = {
-  sanitize(value: unknown): T;
+  sanitize<S = T>(value: S): T;
 };
 
 export type Address = {
