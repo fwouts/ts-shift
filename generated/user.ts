@@ -1,5 +1,3 @@
-import { inspect } from "util";
-
 export type Address = {
   street: string;
   city: string;
@@ -221,7 +219,14 @@ export const User: Type<User> = {
 };
 
 function fail(message: string, value: unknown): never {
-  throw new ValidationError(message + ":\n" + inspect(value));
+  let debugValue: string;
+  try {
+    debugValue = JSON.stringify(debugValue, null, 2);
+  } catch (e) {
+    // Not representable in JSON.
+    debugValue = `${debugValue}`;
+  }
+  throw new ValidationError(message + ":\n" + debugValue);
 }
 
 export class ValidationError extends Error {

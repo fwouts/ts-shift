@@ -34,14 +34,18 @@ export function generate(types: Record<string, Type>) {
     `
     )
     .join("\n");
-  // TODO: Don't use inspect for browser compatibility.
   const unformatted = `
-  import { inspect } from 'util';
-
   ${definitions}
 
   function fail(message: string, value: unknown): never {
-    throw new ValidationError(message + ':\\n' + inspect(value));
+    let debugValue: string;
+    try {
+      debugValue = JSON.stringify(debugValue, null, 2);
+    } catch (e) {
+      // Not representable in JSON.
+      debugValue = \`\${debugValue}\`;
+    }
+    throw new ValidationError(message + ':\\n' + debugValue);
   }
 
   export class ValidationError extends Error {
