@@ -43,17 +43,22 @@ export function parse(filePaths: string[]) {
       throw new Error(`Missing source file: ${filePath}`);
     }
     for (const statement of sourceFile.statements) {
-      if (ts.isTypeAliasDeclaration(statement)) {
-        const aliasType = checker.getTypeAtLocation(statement);
-        types[statement.name.text] = extractType(aliasType);
+      if (
+        ts.isTypeAliasDeclaration(statement) ||
+        ts.isInterfaceDeclaration(statement)
+      ) {
+        types[statement.name.text] = extractType(
+          checker.getTypeAtLocation(statement),
+          true
+        );
       }
     }
   }
   return types;
 
-  function extractType(type: ts.Type, ignoreAlias = false): Type {
+  function extractType(type: ts.Type, ignoreTypeName = false): Type {
     const name = type.getSymbol()?.name;
-    if (!ignoreAlias && name && name !== "__type") {
+    if (!ignoreTypeName && name && name !== "__type") {
       types[name] = extractType(type, true);
       return {
         kind: "alias",
