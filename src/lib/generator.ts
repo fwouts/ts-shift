@@ -165,6 +165,10 @@ function generateTypeValidator(
         "."
       )} is not undefined", ${value})`;
     case "union":
+      // TODO: Improve support for discriminated types, so when we
+      // know for sure that it's supposed to be a specific one, we
+      // give the error that is most relevant (as opposed to an error
+      // related to the last possible type).
       return `(() => {
         let error: ValidationError | null = null;
         ${type.types
