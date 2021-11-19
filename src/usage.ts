@@ -1,16 +1,4 @@
-import { createErrorCatcher, User } from "../generated/user";
-
-const errorCatcher = createErrorCatcher();
-if (
-  !User.validate(
-    {},
-    {
-      errorCatcher,
-    }
-  )
-) {
-  console.log(errorCatcher.error);
-}
+import { User } from "../generated/user";
 
 const user = User.sanitize({
   name: {
