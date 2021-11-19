@@ -1,9 +1,11 @@
 {
   "name": "ts-shift",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "author": "François Wouts <f@zenc.io>",
   "license": "MIT",
-  "bin": "dist/main.js",
+  "bin": {
+    "ts-shift": "./dist/main.js"
+  },
   "scripts": {
     "prepublish": "yarn build",
     "build": "rimraf dist && tsc",
