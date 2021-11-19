@@ -77,7 +77,15 @@ export function generate(types: Record<string, Type>) {
 function generateTypeDeclaration(type: Type): string {
   switch (type.kind) {
     case "alias":
-      return `${type.name}`;
+      return type.name;
+    case "any":
+      return `any`;
+    case "boolean":
+      return "boolean";
+    case "literal":
+      return JSON.stringify(type.value);
+    case "null":
+      return "null";
     case "number":
       return `number`;
     case "object":
@@ -94,6 +102,8 @@ function generateTypeDeclaration(type: Type): string {
       }`;
     case "string":
       return `string`;
+    case "undefined":
+      return "undefined";
     default:
       throw assertNever(type);
   }
@@ -107,6 +117,22 @@ function generateTypeValidator(
   switch (type.kind) {
     case "alias":
       return `${type.name}.validate(${value})`;
+    case "any":
+      return "true";
+    case "boolean":
+      return `typeof(${value}) === 'boolean' || fail("${path.join(
+        "."
+      )} is not a boolean", ${value})`;
+    case "literal":
+      return `typeof(${value}) === ${JSON.stringify(
+        type.value
+      )} || fail("${path.join(".")} must equal ${JSON.stringify(
+        type.value
+      )}", ${value})`;
+    case "null":
+      return `${value} === null || fail("${path.join(
+        "."
+      )} is not null", ${value})`;
     case "number":
       return `typeof(${value}) === 'number' || fail("${path.join(
         "."
@@ -132,6 +158,10 @@ function generateTypeValidator(
       return `typeof(${value}) === 'string' || fail("${path.join(
         "."
       )} is not a string", ${value})`;
+    case "undefined":
+      return `${value} === undefined || fail("${path.join(
+        "."
+      )} is not undefined", ${value})`;
     default:
       throw assertNever(type);
   }
@@ -145,6 +175,14 @@ function generateTypeSanitizer(
   switch (type.kind) {
     case "alias":
       return `${type.name}.sanitize(${value})`;
+    case "any":
+      return value;
+    case "boolean":
+      return value;
+    case "literal":
+      return value;
+    case "null":
+      return value;
     case "number":
       return value;
     case "object":
@@ -169,6 +207,8 @@ function generateTypeSanitizer(
         return ${localName}_sanitized;
       })()`;
     case "string":
+      return value;
+    case "undefined":
       return value;
     default:
       throw assertNever(type);

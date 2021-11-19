@@ -4,6 +4,19 @@ export type Type =
       name: string;
     }
   | {
+      kind: "any";
+    }
+  | {
+      kind: "boolean";
+    }
+  | {
+      kind: "literal";
+      value: boolean | number | string;
+    }
+  | {
+      kind: "null";
+    }
+  | {
       kind: "number";
     }
   | {
@@ -12,6 +25,9 @@ export type Type =
     }
   | {
       kind: "string";
+    }
+  | {
+      kind: "undefined";
     };
 
 export type ObjectProperty = {
