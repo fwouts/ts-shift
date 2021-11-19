@@ -9,7 +9,13 @@ export function generate(types: Record<string, Type>) {
   import { inspect } from 'util';
 
   function fail(message: string, value: unknown): never {
-    throw new Error(message + ':\\n' + inspect(value));
+    throw new ValidationError(message + ':\\n' + inspect(value));
+  }
+
+  export class ValidationError extends Error {
+    constructor(message: string) {
+      super(message);
+    }
   }
 
   export function createErrorCatcher(): ErrorCatcher {
@@ -43,6 +49,9 @@ export function generate(types: Record<string, Type>) {
             try {
               return ${generateTypeValidator(type, "__value__", [name])}
             } catch (e: any) {
+              if (!(e instanceof ValidationError)) {
+                throw e;
+              }
               if (errorCatcher) {
                 errorCatcher.error = e.message;
                 return false;

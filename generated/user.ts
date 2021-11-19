@@ -1,7 +1,13 @@
 import { inspect } from "util";
 
 function fail(message: string, value: unknown): never {
-  throw new Error(message + ":\n" + inspect(value));
+  throw new ValidationError(message + ":\n" + inspect(value));
+}
+
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
 }
 
 export function createErrorCatcher(): ErrorCatcher {
@@ -62,6 +68,9 @@ export const Address: Type<Address> = {
         fail("Address is not an object", __value__)
       );
     } catch (e: any) {
+      if (!(e instanceof ValidationError)) {
+        throw e;
+      }
       if (errorCatcher) {
         errorCatcher.error = e.message;
         return false;
@@ -150,6 +159,9 @@ export const User: Type<User> = {
         fail("User is not an object", __value__)
       );
     } catch (e: any) {
+      if (!(e instanceof ValidationError)) {
+        throw e;
+      }
       if (errorCatcher) {
         errorCatcher.error = e.message;
         return false;
