@@ -3,9 +3,11 @@
   "version": "0.1.0",
   "author": "François Wouts <f@zenc.io>",
   "license": "MIT",
+  "bin": "dist/main.js",
   "scripts": {
+    "build": "rimraf dist && tsc",
     "dev:generate": "ts-node-dev --respawn --watch examples src/main.ts examples/user.ts -o generated/user.ts",
-    "dev:usage": "ts-node-dev --respawn src/usage.ts"
+    "dev:usage": "ts-node-dev --respawn examples/usage.ts"
   },
   "dependencies": {
     "assert-never": "^1.2.1",
@@ -17,6 +19,7 @@
   "devDependencies": {
     "@types/node": "^16.11.9",
     "@types/prettier": "^2.4.2",
+    "rimraf": "^3.0.2",
     "ts-node-dev": "^1.1.8"
   }
 }
