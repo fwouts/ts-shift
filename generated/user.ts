@@ -31,11 +31,7 @@ export const Address: Type<Address> = {
       },
     },
   },
-  create(__value__: Address) {
-    Address.validate(__value__);
-    return __value__;
-  },
-  sanitize(__value__: unknown) {
+  create(__value__: unknown) {
     Address.validate(__value__);
     return (() => {
       const address: any = __value__;
@@ -46,7 +42,7 @@ export const Address: Type<Address> = {
       return address_sanitized;
     })();
   },
-  validate(__value__: any, { errorCatcher } = {}): __value__ is Address {
+  validate(__value__: unknown, { errorCatcher } = {}): __value__ is Address {
     try {
       return (
         (typeof __value__ === "object" &&
@@ -146,11 +142,7 @@ export const User: Type<User> = {
       },
     },
   },
-  create(__value__: User) {
-    User.validate(__value__);
-    return __value__;
-  },
-  sanitize(__value__: unknown) {
+  create(__value__: unknown) {
     User.validate(__value__);
     return (() => {
       const user: any = __value__;
@@ -164,7 +156,7 @@ export const User: Type<User> = {
         user_name_sanitized["last"] = user_name["last"];
         return user_name_sanitized;
       })();
-      user_sanitized["address"] = Address.sanitize(user["address"]);
+      user_sanitized["address"] = Address.create(user["address"]);
       if (user["test"] !== undefined) {
         user_sanitized["test"] = (() => {
           const user_test: any = user["test"];
@@ -174,12 +166,12 @@ export const User: Type<User> = {
         })();
       }
       if (user["parent"] !== undefined) {
-        user_sanitized["parent"] = User.sanitize(user["parent"]);
+        user_sanitized["parent"] = User.create(user["parent"]);
       }
       return user_sanitized;
     })();
   },
-  validate(__value__: any, { errorCatcher } = {}): __value__ is User {
+  validate(__value__: unknown, { errorCatcher } = {}): __value__ is User {
     try {
       return (
         (typeof __value__ === "object" &&
@@ -251,8 +243,7 @@ export interface ErrorCatcher {
 export type Type<T> = {
   name: string;
   schema: Schema;
-  create(value: T): T;
-  sanitize<S = T>(value: S): T;
+  create<S = T>(value: S): T;
   validate<S = T>(
     value: S,
     options?: {

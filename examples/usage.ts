@@ -1,6 +1,6 @@
 import { User } from "../generated/user";
 
-const user = User.sanitize({
+const user = User.create({
   name: {
     last: "W",
   },
@@ -12,16 +12,3 @@ const user = User.sanitize({
   },
 });
 console.log(user);
-
-// You can create a new user with this convenience method:
-User.create({
-  name: {
-    last: "W",
-  },
-  address: {
-    street: "123 George Street",
-    city: "Sydney",
-    postCode: 2000,
-    // Note: adding any unnecessary field will cause a TypeScript error!
-  },
-});

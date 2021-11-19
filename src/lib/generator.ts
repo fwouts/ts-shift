@@ -11,15 +11,11 @@ export function generate(types: Record<string, Type>) {
     export const ${name}: Type<${name}> = {
       name: ${JSON.stringify(name)},
       schema: ${generateSchema(type)},
-      create(__value__: ${name}) {
-        ${name}.validate(__value__);
-        return __value__;
-      },
-      sanitize(__value__: unknown) {
+      create(__value__: unknown) {
         ${name}.validate(__value__);
         return ${generateTypeSanitizer(type, "__value__", [name])}
       },
-      validate(__value__: any, { errorCatcher } = {}): __value__ is ${name} {
+      validate(__value__: unknown, { errorCatcher } = {}): __value__ is ${name} {
         try {
           return ${generateTypeValidator(type, "__value__", [name])}
         } catch (e: any) {
@@ -67,8 +63,7 @@ export function generate(types: Record<string, Type>) {
   export type Type<T> = {
     name: string;
     schema: Schema;
-    create(value: T): T;
-    sanitize<S = T>(value: S): T;
+    create<S = T>(value: S): T;
     validate<S = T>(value: S, options?: {
       errorCatcher?: ErrorCatcher
     }): boolean;
@@ -309,7 +304,7 @@ function generateTypeSanitizer(
 ): string {
   switch (type.kind) {
     case "alias":
-      return `${type.name}.sanitize(${value})`;
+      return `${type.name}.create(${value})`;
     case "any":
       return value;
     case "boolean":
