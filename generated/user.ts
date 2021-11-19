@@ -1,36 +1,5 @@
 import { inspect } from "util";
 
-function fail(message: string, value: unknown): never {
-  throw new ValidationError(message + ":\n" + inspect(value));
-}
-
-export class ValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-  }
-}
-
-export function createErrorCatcher(): ErrorCatcher {
-  return {
-    error: "",
-  };
-}
-
-export interface ErrorCatcher {
-  error: string;
-}
-
-export type Type<T> = {
-  create(value: T): T;
-  sanitize<S = T>(value: S): T;
-  validate<S = T>(
-    value: S,
-    options?: {
-      errorCatcher?: ErrorCatcher;
-    }
-  ): boolean;
-};
-
 export type Address = {
   street: string;
   city: string;
@@ -38,6 +7,30 @@ export type Address = {
 };
 
 export const Address: Type<Address> = {
+  name: "Address",
+  schema: {
+    kind: "object",
+    properties: {
+      ["street"]: {
+        schema: {
+          kind: "string",
+        },
+        required: true,
+      },
+      ["city"]: {
+        schema: {
+          kind: "string",
+        },
+        required: true,
+      },
+      ["postCode"]: {
+        schema: {
+          kind: "number",
+        },
+        required: true,
+      },
+    },
+  },
   create(__value__: Address) {
     Address.validate(__value__);
     return __value__;
@@ -99,6 +92,60 @@ export type User = {
 };
 
 export const User: Type<User> = {
+  name: "User",
+  schema: {
+    kind: "object",
+    properties: {
+      ["name"]: {
+        schema: {
+          kind: "object",
+          properties: {
+            ["first"]: {
+              schema: {
+                kind: "string",
+              },
+              required: false,
+            },
+            ["last"]: {
+              schema: {
+                kind: "string",
+              },
+              required: true,
+            },
+          },
+        },
+        required: true,
+      },
+      ["address"]: {
+        schema: {
+          kind: "alias",
+          type: () => Address,
+        },
+        required: true,
+      },
+      ["test"]: {
+        schema: {
+          kind: "object",
+          properties: {
+            ["value"]: {
+              schema: {
+                kind: "string",
+              },
+              required: true,
+            },
+          },
+        },
+        required: false,
+      },
+      ["parent"]: {
+        schema: {
+          kind: "alias",
+          type: () => User,
+        },
+        required: false,
+      },
+    },
+  },
   create(__value__: User) {
     User.validate(__value__);
     return __value__;
@@ -179,4 +226,78 @@ export const User: Type<User> = {
       }
     }
   },
+};
+
+function fail(message: string, value: unknown): never {
+  throw new ValidationError(message + ":\n" + inspect(value));
+}
+
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export function createErrorCatcher(): ErrorCatcher {
+  return {
+    error: "",
+  };
+}
+
+export interface ErrorCatcher {
+  error: string;
+}
+
+export type Type<T> = {
+  name: string;
+  schema: Schema;
+  create(value: T): T;
+  sanitize<S = T>(value: S): T;
+  validate<S = T>(
+    value: S,
+    options?: {
+      errorCatcher?: ErrorCatcher;
+    }
+  ): boolean;
+};
+
+export type Schema =
+  | {
+      kind: "alias";
+      type: () => Type<unknown>;
+    }
+  | {
+      kind: "any";
+    }
+  | {
+      kind: "boolean";
+    }
+  | {
+      kind: "literal";
+      value: boolean | number | string;
+    }
+  | {
+      kind: "null";
+    }
+  | {
+      kind: "number";
+    }
+  | {
+      kind: "object";
+      properties: Record<string, ObjectSchemaProperty>;
+    }
+  | {
+      kind: "string";
+    }
+  | {
+      kind: "undefined";
+    }
+  | {
+      kind: "union";
+      schemas: Schema[];
+    };
+
+export type ObjectSchemaProperty = {
+  schema: Schema;
+  required: boolean;
 };

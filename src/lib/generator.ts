@@ -3,10 +3,46 @@ import prettier from "prettier";
 import { Type } from "./types";
 
 export function generate(types: Record<string, Type>) {
-  // TODO: Don't use inspect for browser compatibility.
-  const unformatted =
+  const definitions = Object.entries(types)
+    .map(
+      ([name, type]) => `
+    export type ${name} = ${generateTypeDeclaration(type)};
+
+    export const ${name}: Type<${name}> = {
+      name: ${JSON.stringify(name)},
+      schema: ${generateSchema(type)},
+      create(__value__: ${name}) {
+        ${name}.validate(__value__);
+        return __value__;
+      },
+      sanitize(__value__: unknown) {
+        ${name}.validate(__value__);
+        return ${generateTypeSanitizer(type, "__value__", [name])}
+      },
+      validate(__value__: any, { errorCatcher } = {}): __value__ is ${name} {
+        try {
+          return ${generateTypeValidator(type, "__value__", [name])}
+        } catch (e: any) {
+          if (!(e instanceof ValidationError)) {
+            throw e;
+          }
+          if (errorCatcher) {
+            errorCatcher.error = e.message;
+            return false;
+          } else {
+            throw e;
+          }
+        }
+      }
+    };
     `
+    )
+    .join("\n");
+  // TODO: Don't use inspect for browser compatibility.
+  const unformatted = `
   import { inspect } from 'util';
+
+  ${definitions}
 
   function fail(message: string, value: unknown): never {
     throw new ValidationError(message + ':\\n' + inspect(value));
@@ -29,49 +65,122 @@ export function generate(types: Record<string, Type>) {
   }
 
   export type Type<T> = {
+    name: string;
+    schema: Schema;
     create(value: T): T;
     sanitize<S = T>(value: S): T;
     validate<S = T>(value: S, options?: {
       errorCatcher?: ErrorCatcher
     }): boolean;
   }
-  ` +
-    Object.entries(types)
-      .map(
-        ([name, type]) => `
-        export type ${name} = ${generateTypeDeclaration(type)};
 
-        export const ${name}: Type<${name}> = {
-          create(__value__: ${name}) {
-            ${name}.validate(__value__);
-            return __value__;
-          },
-          sanitize(__value__: unknown) {
-            ${name}.validate(__value__);
-            return ${generateTypeSanitizer(type, "__value__", [name])}
-          },
-          validate(__value__: any, { errorCatcher } = {}): __value__ is ${name} {
-            try {
-              return ${generateTypeValidator(type, "__value__", [name])}
-            } catch (e: any) {
-              if (!(e instanceof ValidationError)) {
-                throw e;
-              }
-              if (errorCatcher) {
-                errorCatcher.error = e.message;
-                return false;
-              } else {
-                throw e;
-              }
-            }
-          }
-        };
-        `
-      )
-      .join("\n");
+  export type Schema =
+  | {
+      kind: "alias";
+      type: () => Type<unknown>;
+    }
+  | {
+      kind: "any";
+    }
+  | {
+      kind: "boolean";
+    }
+  | {
+      kind: "literal";
+      value: boolean | number | string;
+    }
+  | {
+      kind: "null";
+    }
+  | {
+      kind: "number";
+    }
+  | {
+      kind: "object";
+      properties: Record<string, ObjectSchemaProperty>;
+    }
+  | {
+      kind: "string";
+    }
+  | {
+      kind: "undefined";
+    }
+  | {
+      kind: "union";
+      schemas: Schema[];
+    };
+
+  export type ObjectSchemaProperty = {
+    schema: Schema;
+    required: boolean;
+  }
+  `;
   return prettier.format(unformatted, {
     parser: "babel-ts",
   });
+}
+
+function generateSchema(type: Type): string {
+  switch (type.kind) {
+    case "alias":
+      return `{
+        kind: "alias",
+        type: () => ${type.name}
+      }`;
+    case "any":
+      return `{
+        kind: "any"
+      }`;
+    case "boolean":
+      return `{
+        kind: "boolean"
+      }`;
+    case "literal":
+      return `{
+        kind: "literal",
+        value: ${JSON.stringify(type.value)}
+      }`;
+    case "null":
+      return `{
+        kind: "null"
+      }`;
+    case "number":
+      return `{
+        kind: "number"
+      }`;
+    case "object":
+      return `{
+        kind: "object",
+        properties: {
+          ${Object.entries(type.properties)
+            .map(
+              ([name, property]) =>
+                `["${name}"]: {
+                  schema: ${generateSchema(property.type)},
+                  required: ${JSON.stringify(property.required)}
+                }`
+            )
+            .join(",")}
+        }
+      }`;
+    case "string":
+      return `{
+        kind: "string"
+      }`;
+    case "undefined":
+      return `{
+        kind: "undefined"
+      }`;
+    case "union":
+      return `{
+        kind: "union",
+        schemas: [
+          ${type.types.map((subtype) => generateSchema(subtype)).join(",")}
+        ]
+      }`;
+    default:
+      throw assertNever(type);
+  }
 }
 
 function generateTypeDeclaration(type: Type): string {
