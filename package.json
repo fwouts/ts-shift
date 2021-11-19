@@ -5,6 +5,7 @@
   "license": "MIT",
   "bin": "dist/main.js",
   "scripts": {
+    "prepublish": "yarn build",
     "build": "rimraf dist && tsc",
     "dev:generate": "ts-node-dev --respawn --watch examples src/main.ts examples/user.ts -o generated/user.ts",
     "dev:usage": "ts-node-dev --respawn examples/usage.ts"
