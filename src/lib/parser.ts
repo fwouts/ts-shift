@@ -106,7 +106,9 @@ export function parse(reader: Reader, filePaths: string[]) {
         name,
       };
     }
-    if (type.flags === ts.TypeFlags.Boolean) {
+    if ((type.flags & ~ts.TypeFlags.Union) === ts.TypeFlags.Boolean) {
+      // Note: boolean types also have the union flag, because they're the
+      // union of false and true, hence why we ignore this additional flag.
       return {
         kind: "boolean",
       };
@@ -166,7 +168,10 @@ export function parse(reader: Reader, filePaths: string[]) {
       return {
         kind: "string",
       };
-    } else if (type.flags === ts.TypeFlags.Undefined) {
+    } else if (
+      type.flags === ts.TypeFlags.Undefined ||
+      type.flags === ts.TypeFlags.Void
+    ) {
       return {
         kind: "undefined",
       };

@@ -9,6 +9,7 @@
   "scripts": {
     "prepublish": "yarn build",
     "build": "rimraf dist && tsc",
+    "test": "jest",
     "dev:generate": "ts-node-dev --respawn --watch examples src/cli/main.ts examples/user.ts -o generated/user.ts",
     "dev:usage": "ts-node-dev --respawn examples/usage.ts"
   },
@@ -22,9 +23,12 @@
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",
+    "@types/jest": "^27.0.3",
     "@types/node": "^16.11.9",
     "@types/prettier": "^2.4.2",
+    "jest": "^27.3.1",
     "rimraf": "^3.0.2",
+    "ts-jest": "^27.0.7",
     "ts-node-dev": "^1.1.8"
   }
 }
