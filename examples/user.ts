@@ -8,7 +8,10 @@ export interface User {
   address: Address;
   test?: Box<string>;
   parent?: User;
+  siblings: User[];
 }
+
+export type UserList = User[];
 
 interface Box<T> {
   value: T;

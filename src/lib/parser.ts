@@ -98,8 +98,42 @@ export function parse(reader: Reader, filePaths: string[]) {
   return types;
 
   function extractType(type: ts.Type, ignoreTypeName = false): Type {
-    const name = type.aliasSymbol?.name || type.getSymbol()?.name;
-    if (
+    const aliasName = type.aliasSymbol?.name;
+    const symbolName = type.getSymbol()?.name;
+    const name = aliasName || symbolName;
+    if (aliasName === "Array") {
+      const typeArguments = ((type as any).aliasTypeArguments || []).map(
+        (t: ts.Type) => extractType(t)
+      );
+      const typeArgument = typeArguments[0];
+      if (!typeArgument) {
+        throw new Error(
+          `Expected a type argument in array type: ${checker.typeToString(
+            type
+          )}`
+        );
+      }
+      return {
+        kind: "array",
+        type: typeArgument,
+      };
+    } else if (symbolName === "Array") {
+      const typeArguments = (
+        checker.getTypeArguments(type as ts.TypeReference) || []
+      ).map((t) => extractType(t));
+      const typeArgument = typeArguments[0];
+      if (!typeArgument) {
+        throw new Error(
+          `Expected a type argument in array type: ${checker.typeToString(
+            type
+          )}`
+        );
+      }
+      return {
+        kind: "array",
+        type: typeArgument,
+      };
+    } else if (
       !ignoreTypeName &&
       name &&
       name !== "__type" &&
@@ -113,8 +147,11 @@ export function parse(reader: Reader, filePaths: string[]) {
         kind: "alias",
         name,
       };
-    }
-    if ((type.flags & ~ts.TypeFlags.Union) === ts.TypeFlags.Boolean) {
+    } else if (type.flags === ts.TypeFlags.Any) {
+      return {
+        kind: "any",
+      };
+    } else if ((type.flags & ~ts.TypeFlags.Union) === ts.TypeFlags.Boolean) {
       // Note: boolean types also have the union flag, because they're the
       // union of false and true, hence why we ignore this additional flag.
       return {

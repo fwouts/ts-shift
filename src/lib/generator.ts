@@ -8,16 +8,20 @@ export function generate(types: Record<string, Type>) {
       ([name, type]) => `
     export type ${name} = ${generateTypeDeclaration(type)};
 
-    export const ${name}: Type<${name}> = {
+    export const ${name} = Object.freeze({
       name: ${JSON.stringify(name)},
       schema: ${generateSchema(type)},
-      create(__value__: unknown) {
-        ${name}.validate(__value__, { allowAdditionalProperties: true });
+      create(__value__: ${name}): ${name} {
+        if (!${name}.validate(__value__, { allowAdditionalProperties: true })) {
+          // This error will never be thrown because
+          // validate() already throws.
+          throw new ValidationError();
+        }
         return ${generateTypeSanitizer(type, "__value__", [name])}
       },
       validate(
-        __value__: unknown,
-        { errorCatcher, allowAdditionalProperties } = {}
+        __value__: ${name},
+        { errorCatcher, allowAdditionalProperties }: ValidateOptions = {}
       ): __value__ is ${name} {
         try {
           ${generateTypeValidator(type, "__value__", [name])}
@@ -34,7 +38,7 @@ export function generate(types: Record<string, Type>) {
           }
         }
       }
-    };
+    } as const);
     `
     )
     .join("\n");
@@ -53,7 +57,7 @@ export function generate(types: Record<string, Type>) {
   }
 
   export class ValidationError extends Error {
-    constructor(message: string) {
+    constructor(message = "") {
       super(message);
     }
   }
@@ -72,10 +76,12 @@ export function generate(types: Record<string, Type>) {
     readonly name: string;
     readonly schema: Schema;
     create<S = T>(value: S): T;
-    validate<S = T>(value: S, options?: {
-      errorCatcher?: ErrorCatcher,
-      allowAdditionalProperties?: boolean | undefined,
-    }): boolean;
+    validate<S = T>(value: S, options?: ValidateOptions): boolean;
+  }
+
+  export interface ValidateOptions {
+    errorCatcher?: ErrorCatcher,
+    allowAdditionalProperties?: boolean | undefined,
   }
 
   export type Schema =
@@ -85,6 +91,10 @@ export function generate(types: Record<string, Type>) {
     }
   | {
       kind: "any";
+    }
+  | {
+      kind: "array";
+      schema: Schema;
     }
   | {
       kind: "boolean";
@@ -134,6 +144,11 @@ function generateSchema(type: Type): string {
     case "any":
       return `{
         kind: "any"
+      }`;
+    case "array":
+      return `{
+        kind: "array",
+        schema: ${generateSchema(type.type)}
       }`;
     case "boolean":
       return `{
@@ -193,6 +208,8 @@ function generateTypeDeclaration(type: Type): string {
       return type.name;
     case "any":
       return `any`;
+    case "array":
+      return `Array<${generateTypeDeclaration(type.type)}>`;
     case "boolean":
       return "boolean";
     case "literal":
@@ -238,6 +255,15 @@ function generateTypeValidator(
       `.trim();
     case "any":
       return "";
+    case "array":
+      return `
+      if (!Array.isArray(${value})) {
+        fail("${path.join(".")} is not an array", ${value});
+      }
+      for (const item of ${value}) {
+        ${generateTypeValidator(type.type, "item", [...path, "__item__"])}
+      }
+      `.trim();
     case "boolean":
       return `
       if (typeof(${value}) !== 'boolean') {
@@ -349,6 +375,12 @@ function generateTypeSanitizer(
       return `${type.name}.create(${value})`;
     case "any":
       return value;
+    case "array":
+      return `(${value} as Array<any>).map(item => ${generateTypeSanitizer(
+        type.type,
+        "item",
+        [...path, "__item__"]
+      )})`;
     case "boolean":
       return value;
     case "literal":

@@ -7,6 +7,10 @@ export type Type =
       kind: "any";
     }
   | {
+      kind: "array";
+      type: Type;
+    }
+  | {
       kind: "boolean";
     }
   | {

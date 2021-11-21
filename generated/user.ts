@@ -4,7 +4,7 @@ export type Address = {
   postCode: number;
 };
 
-export const Address: Type<Address> = {
+export const Address = Object.freeze({
   name: "Address",
   schema: {
     kind: "object",
@@ -29,8 +29,12 @@ export const Address: Type<Address> = {
       },
     },
   },
-  create(__value__: unknown) {
-    Address.validate(__value__, { allowAdditionalProperties: true });
+  create(__value__: Address): Address {
+    if (!Address.validate(__value__, { allowAdditionalProperties: true })) {
+      // This error will never be thrown because
+      // validate() already throws.
+      throw new ValidationError();
+    }
     return (() => {
       const address: any = __value__;
       const address_sanitized: any = {};
@@ -41,8 +45,8 @@ export const Address: Type<Address> = {
     })();
   },
   validate(
-    __value__: unknown,
-    { errorCatcher, allowAdditionalProperties } = {}
+    __value__: Address,
+    { errorCatcher, allowAdditionalProperties }: ValidateOptions = {}
   ): __value__ is Address {
     try {
       if (typeof __value__ !== "object" || __value__ === null) {
@@ -79,7 +83,7 @@ export const Address: Type<Address> = {
       }
     }
   },
-};
+} as const);
 
 export type User = {
   name: {
@@ -91,9 +95,10 @@ export type User = {
     value: string;
   };
   parent?: User;
+  siblings: Array<User>;
 };
 
-export const User: Type<User> = {
+export const User = Object.freeze({
   name: "User",
   schema: {
     kind: "object",
@@ -146,10 +151,24 @@ export const User: Type<User> = {
         },
         required: false,
       },
+      ["siblings"]: {
+        schema: {
+          kind: "array",
+          schema: {
+            kind: "alias",
+            type: () => User,
+          },
+        },
+        required: true,
+      },
     },
   },
-  create(__value__: unknown) {
-    User.validate(__value__, { allowAdditionalProperties: true });
+  create(__value__: User): User {
+    if (!User.validate(__value__, { allowAdditionalProperties: true })) {
+      // This error will never be thrown because
+      // validate() already throws.
+      throw new ValidationError();
+    }
     return (() => {
       const user: any = __value__;
       const user_sanitized: any = {};
@@ -174,12 +193,15 @@ export const User: Type<User> = {
       if (user["parent"] !== undefined) {
         user_sanitized["parent"] = User.create(user["parent"]);
       }
+      user_sanitized["siblings"] = (user["siblings"] as Array<any>).map(
+        (item) => User.create(item)
+      );
       return user_sanitized;
     })();
   },
   validate(
-    __value__: unknown,
-    { errorCatcher, allowAdditionalProperties } = {}
+    __value__: User,
+    { errorCatcher, allowAdditionalProperties }: ValidateOptions = {}
   ): __value__ is User {
     try {
       if (typeof __value__ !== "object" || __value__ === null) {
@@ -187,7 +209,13 @@ export const User: Type<User> = {
       }
       const user = __value__ as any;
       if (!allowAdditionalProperties) {
-        const allowedKeys = new Set(["name", "address", "test", "parent"]);
+        const allowedKeys = new Set([
+          "name",
+          "address",
+          "test",
+          "parent",
+          "siblings",
+        ]);
         for (const key of Object.keys(user)) {
           if (!allowedKeys.has(key)) {
             fail("User does not allow key " + key, __value__);
@@ -235,6 +263,12 @@ export const User: Type<User> = {
       if (user["parent"] !== undefined) {
         User.validate(user["parent"], { allowAdditionalProperties });
       }
+      if (!Array.isArray(user["siblings"])) {
+        fail("User.siblings is not an array", user["siblings"]);
+      }
+      for (const item of user["siblings"]) {
+        User.validate(item, { allowAdditionalProperties });
+      }
       return true;
     } catch (e: any) {
       if (!(e instanceof ValidationError)) {
@@ -248,7 +282,52 @@ export const User: Type<User> = {
       }
     }
   },
-};
+} as const);
+
+export type UserList = Array<User>;
+
+export const UserList = Object.freeze({
+  name: "UserList",
+  schema: {
+    kind: "array",
+    schema: {
+      kind: "alias",
+      type: () => User,
+    },
+  },
+  create(__value__: UserList): UserList {
+    if (!UserList.validate(__value__, { allowAdditionalProperties: true })) {
+      // This error will never be thrown because
+      // validate() already throws.
+      throw new ValidationError();
+    }
+    return (__value__ as Array<any>).map((item) => User.create(item));
+  },
+  validate(
+    __value__: UserList,
+    { errorCatcher, allowAdditionalProperties }: ValidateOptions = {}
+  ): __value__ is UserList {
+    try {
+      if (!Array.isArray(__value__)) {
+        fail("UserList is not an array", __value__);
+      }
+      for (const item of __value__) {
+        User.validate(item, { allowAdditionalProperties });
+      }
+      return true;
+    } catch (e: any) {
+      if (!(e instanceof ValidationError)) {
+        throw e;
+      }
+      if (errorCatcher) {
+        errorCatcher.error = e.message;
+        return false;
+      } else {
+        throw e;
+      }
+    }
+  },
+} as const);
 
 function fail(message: string, value: unknown): never {
   let debugValue: string;
@@ -262,7 +341,7 @@ function fail(message: string, value: unknown): never {
 }
 
 export class ValidationError extends Error {
-  constructor(message: string) {
+  constructor(message = "") {
     super(message);
   }
 }
@@ -281,14 +360,13 @@ export type Type<T> = {
   readonly name: string;
   readonly schema: Schema;
   create<S = T>(value: S): T;
-  validate<S = T>(
-    value: S,
-    options?: {
-      errorCatcher?: ErrorCatcher;
-      allowAdditionalProperties?: boolean | undefined;
-    }
-  ): boolean;
+  validate<S = T>(value: S, options?: ValidateOptions): boolean;
 };
+
+export interface ValidateOptions {
+  errorCatcher?: ErrorCatcher;
+  allowAdditionalProperties?: boolean | undefined;
+}
 
 export type Schema =
   | {
@@ -297,6 +375,10 @@ export type Schema =
     }
   | {
       kind: "any";
+    }
+  | {
+      kind: "array";
+      schema: Schema;
     }
   | {
       kind: "boolean";

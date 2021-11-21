@@ -1,6 +1,6 @@
 import { User } from "../generated/user";
 
-const user = User.create({
+const payload = <any>{
   name: {
     last: "W",
   },
@@ -10,5 +10,8 @@ const user = User.create({
     postCode: 2000, // try "2000" instead to see error
     irrelevant: 123,
   },
-});
+  siblings: [],
+};
+
+const user = User.create(payload);
 console.log(user);

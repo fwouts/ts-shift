@@ -23,6 +23,54 @@ describe("Parser", () => {
   );
 
   test(
+    "any types",
+    `
+    export type A = any;
+    `,
+    {
+      A: {
+        kind: "any",
+      },
+    }
+  );
+
+  test(
+    "array types",
+    `
+    // Note: E[] wouldn't work in test environment
+    // because it doesn't have access to TypeScript
+    // standard library.
+    export type A = Array<C>;
+    export type B = {
+      foo: Array<C>;
+    }
+    type C = string;
+    `,
+    {
+      A: {
+        kind: "array",
+        type: {
+          kind: "string",
+        },
+      },
+      B: {
+        kind: "object",
+        properties: {
+          foo: {
+            type: {
+              kind: "array",
+              type: {
+                kind: "string",
+              },
+            },
+            required: true,
+          },
+        },
+      },
+    }
+  );
+
+  test(
     "boolean types",
     `
     export type A = boolean;
