@@ -90,7 +90,7 @@ export function parse(reader: Reader, filePaths: string[]) {
   return types;
 
   function extractType(type: ts.Type, ignoreTypeName = false): Type {
-    const name = type.getSymbol()?.name;
+    const name = type.aliasSymbol?.name || type.getSymbol()?.name;
     if (
       !ignoreTypeName &&
       name &&
