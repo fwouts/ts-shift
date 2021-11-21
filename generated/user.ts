@@ -42,23 +42,20 @@ export const Address: Type<Address> = {
   },
   validate(__value__: unknown, { errorCatcher } = {}): __value__ is Address {
     try {
-      return (
-        (typeof __value__ === "object" &&
-          __value__ !== null &&
-          (typeof (__value__ as any)["street"] === "string" ||
-            fail(
-              "Address.street is not a string",
-              (__value__ as any)["street"]
-            )) &&
-          (typeof (__value__ as any)["city"] === "string" ||
-            fail("Address.city is not a string", (__value__ as any)["city"])) &&
-          (typeof (__value__ as any)["postCode"] === "number" ||
-            fail(
-              "Address.postCode is not a number",
-              (__value__ as any)["postCode"]
-            ))) ||
-        fail("Address is not an object", __value__)
-      );
+      if (typeof __value__ !== "object" || __value__ === null) {
+        fail("Address is not an object", __value__);
+      }
+      const address = __value__ as any;
+      if (typeof address["street"] !== "string") {
+        fail("Address.street is not a string", address["street"]);
+      }
+      if (typeof address["city"] !== "string") {
+        fail("Address.city is not a string", address["city"]);
+      }
+      if (typeof address["postCode"] !== "number") {
+        fail("Address.postCode is not a number", address["postCode"]);
+      }
+      return true;
     } catch (e: any) {
       if (!(e instanceof ValidationError)) {
         throw e;
@@ -171,39 +168,36 @@ export const User: Type<User> = {
   },
   validate(__value__: unknown, { errorCatcher } = {}): __value__ is User {
     try {
-      return (
-        (typeof __value__ === "object" &&
-          __value__ !== null &&
-          ((typeof (__value__ as any)["name"] === "object" &&
-            (__value__ as any)["name"] !== null &&
-            (((__value__ as any)["name"] as any)["first"] === undefined ||
-              typeof ((__value__ as any)["name"] as any)["first"] ===
-                "string" ||
-              fail(
-                "User.name.first is not a string",
-                ((__value__ as any)["name"] as any)["first"]
-              )) &&
-            (typeof ((__value__ as any)["name"] as any)["last"] === "string" ||
-              fail(
-                "User.name.last is not a string",
-                ((__value__ as any)["name"] as any)["last"]
-              ))) ||
-            fail("User.name is not an object", (__value__ as any)["name"])) &&
-          Address.validate((__value__ as any)["address"]) &&
-          ((__value__ as any)["test"] === undefined ||
-            (typeof (__value__ as any)["test"] === "object" &&
-              (__value__ as any)["test"] !== null &&
-              (typeof ((__value__ as any)["test"] as any)["value"] ===
-                "string" ||
-                fail(
-                  "User.test.value is not a string",
-                  ((__value__ as any)["test"] as any)["value"]
-                ))) ||
-            fail("User.test is not an object", (__value__ as any)["test"])) &&
-          ((__value__ as any)["parent"] === undefined ||
-            User.validate((__value__ as any)["parent"]))) ||
-        fail("User is not an object", __value__)
-      );
+      if (typeof __value__ !== "object" || __value__ === null) {
+        fail("User is not an object", __value__);
+      }
+      const user = __value__ as any;
+      if (typeof user["name"] !== "object" || user["name"] === null) {
+        fail("User.name is not an object", user["name"]);
+      }
+      const user_name = user["name"] as any;
+      if (user_name["first"] !== undefined) {
+        if (typeof user_name["first"] !== "string") {
+          fail("User.name.first is not a string", user_name["first"]);
+        }
+      }
+      if (typeof user_name["last"] !== "string") {
+        fail("User.name.last is not a string", user_name["last"]);
+      }
+      Address.validate(user["address"]);
+      if (user["test"] !== undefined) {
+        if (typeof user["test"] !== "object" || user["test"] === null) {
+          fail("User.test is not an object", user["test"]);
+        }
+        const user_test = user["test"] as any;
+        if (typeof user_test["value"] !== "string") {
+          fail("User.test.value is not a string", user_test["value"]);
+        }
+      }
+      if (user["parent"] !== undefined) {
+        User.validate(user["parent"]);
+      }
+      return true;
     } catch (e: any) {
       if (!(e instanceof ValidationError)) {
         throw e;

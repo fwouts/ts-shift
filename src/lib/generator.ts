@@ -17,7 +17,8 @@ export function generate(types: Record<string, Type>) {
       },
       validate(__value__: unknown, { errorCatcher } = {}): __value__ is ${name} {
         try {
-          return ${generateTypeValidator(type, "__value__", [name])}
+          ${generateTypeValidator(type, "__value__", [name])}
+          return true;
         } catch (e: any) {
           if (!(e instanceof ValidationError)) {
             throw e;
@@ -69,7 +70,7 @@ export function generate(types: Record<string, Type>) {
     readonly schema: Schema;
     create<S = T>(value: S): T;
     validate<S = T>(value: S, options?: {
-      errorCatcher?: ErrorCatcher
+      errorCatcher?: ErrorCatcher,
     }): boolean;
   }
 
@@ -228,63 +229,85 @@ function generateTypeValidator(
 ): string {
   switch (type.kind) {
     case "alias":
-      return `${type.name}.validate(${value})`;
+      return `
+      ${type.name}.validate(${value});
+      `.trim();
     case "any":
-      return "true";
+      return "";
     case "boolean":
-      return `typeof(${value}) === 'boolean' || fail("${path.join(
-        "."
-      )} is not a boolean", ${value})`;
+      return `
+      if (typeof(${value}) !== 'boolean') {
+        fail("${path.join(".")} is not a boolean", ${value});
+      }
+      `.trim();
     case "literal":
-      return `${value} === ${JSON.stringify(type.value)} || fail("${path.join(
-        "."
-      )} must equal ${JSON.stringify(type.value)}", ${value})`;
+      return `
+      if (${value} !== ${JSON.stringify(type.value)}) {
+        fail("${path.join(".")} must equal ${JSON.stringify(
+        type.value
+      )}", ${value});
+      }
+      `.trim();
     case "null":
-      return `${value} === null || fail("${path.join(
-        "."
-      )} is not null", ${value})`;
+      return `
+      if (${value} !== null) {
+        fail("${path.join(".")} is not null", ${value});
+      }
+      `.trim();
     case "number":
-      return `typeof(${value}) === 'number' || fail("${path.join(
-        "."
-      )} is not a number", ${value})`;
+      return `
+      if (typeof(${value}) !== 'number') {
+        fail("${path.join(".")} is not a number", ${value});
+      }
+      `.trim();
     case "object":
-      return `typeof(${value}) === 'object' && ${value} !== null
-        ${Object.entries(type.properties)
-          .map(([name, property]) => {
-            const propertyAccessor = `(${value} as any)["${name}"]`;
-            let condition = generateTypeValidator(
-              property.type,
-              propertyAccessor,
-              [...path, name]
-            );
-            if (!property.required) {
-              condition = `${propertyAccessor} === undefined || (${condition})`;
-            }
-            return `&& (${condition})`;
-          })
-          .join("")}
-        || fail("${path.join(".")} is not an object", ${value})`;
+      const variableName = variableNameFromPath(path);
+      return `
+      if (typeof(${value}) !== 'object' || ${value} === null) {
+        fail("${path.join(".")} is not an object", ${value});
+      }
+      const ${variableName} = ${value} as any;
+      ${Object.entries(type.properties)
+        .map(([name, property]) => {
+          const propertyAccessor = `${variableName}["${name}"]`;
+          let checks = generateTypeValidator(property.type, propertyAccessor, [
+            ...path,
+            name,
+          ]);
+          if (!property.required) {
+            checks = `if (${propertyAccessor} !== undefined) {
+            ${checks}
+          }`;
+          }
+          return checks;
+        })
+        .join("")}
+      `.trim();
     case "string":
-      return `typeof(${value}) === 'string' || fail("${path.join(
-        "."
-      )} is not a string", ${value})`;
+      return `
+      if (typeof(${value}) !== 'string') {
+        fail("${path.join(".")} is not a string", ${value});
+      }
+      `.trim();
     case "undefined":
-      return `${value} === undefined || fail("${path.join(
-        "."
-      )} is not undefined", ${value})`;
+      return `
+      if (${value} !== undefined) {
+        fail("${path.join(".")} is not undefined", ${value});
+      }
+      `.trim();
     case "union":
       // TODO: Improve support for discriminated types, so when we
       // know for sure that it's supposed to be a specific one, we
       // give the error that is most relevant (as opposed to an error
       // related to the last possible type).
-      return `(() => {
+      return `union: {
         let error: ValidationError | null = null;
         ${type.types
           .map(
             (subtype, i) => `
         try {
           ${generateTypeValidator(subtype, value, [...path, i.toString(10)])}
-          return true;
+          break union;
         } catch (e) {
           if (!(e instanceof ValidationError)) {
             throw e;
@@ -295,7 +318,7 @@ function generateTypeValidator(
           )
           .join("")}
         throw error;
-      })()`;
+      }`.trim();
     default:
       throw assertNever(type);
   }
