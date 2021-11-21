@@ -1,31 +1,55 @@
-import fs from "fs";
 import ts from "typescript";
 import { inspect } from "util";
 import { ObjectProperty, Type } from "./types";
+import { Reader } from "./vfs";
 
-export function parse(filePaths: string[]) {
+export function parse(reader: Reader, filePaths: string[]) {
   const serviceHost: ts.LanguageServiceHost = {
     getScriptFileNames: () => {
       return filePaths;
     },
     getScriptVersion: (fileName) => {
-      return fs.statSync(fileName).mtimeMs.toString(10);
+      const file = reader.read(fileName);
+      if (file?.kind !== "file") {
+        throw new Error(`Expected a file: ${fileName}`);
+      }
+      return file.lastModifiedMillis().toString(10);
     },
     getScriptSnapshot: (fileName) => {
-      const fileContent = ts.sys.readFile(fileName);
-      if (!fileContent) {
+      const file = reader.read(fileName);
+      if (file?.kind !== "file") {
         return;
       }
-      return ts.ScriptSnapshot.fromString(fileContent);
+      return ts.ScriptSnapshot.fromString(file.read());
     },
-    getCurrentDirectory: ts.sys.getCurrentDirectory,
+    getCurrentDirectory: () => {
+      return reader.currentDirectory();
+    },
     getCompilationSettings: ts.getDefaultCompilerOptions,
     getDefaultLibFileName: ts.getDefaultLibFilePath,
-    fileExists: ts.sys.fileExists,
-    directoryExists: ts.sys.directoryExists,
-    readFile: ts.sys.readFile,
-    readDirectory: ts.sys.readDirectory,
-    getDirectories: ts.sys.getDirectories,
+    fileExists: (path) => reader.read(path)?.kind === "file",
+    readFile: (path) => {
+      const file = reader.read(path);
+      if (file?.kind !== "file") {
+        return;
+      }
+      return file.read();
+    },
+    directoryExists: (directoryName) =>
+      reader.read(directoryName)?.kind === "directory",
+    getDirectories: (directoryName) => {
+      const dir = reader.read(directoryName);
+      if (dir?.kind !== "directory") {
+        return [];
+      }
+      return dir
+        .entries()
+        .filter((entry) => entry.kind === "directory")
+        .map((entry) => entry.name);
+    },
+    readDirectory: () => {
+      throw new Error(`readDirectory is not implemented`);
+    },
   };
   const service = ts.createLanguageService(
     serviceHost,
@@ -55,6 +79,7 @@ export function parse(filePaths: string[]) {
       }
     }
   }
+  service.dispose();
   const types: Record<string, Type> = {};
   for (const [name, type] of Object.entries(pendingTypes)) {
     if (type.kind === "pending") {

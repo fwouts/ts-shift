@@ -5,6 +5,7 @@ import { writeFileSync } from "fs";
 import path from "path";
 import { generate } from "./lib/generator";
 import { parse } from "./lib/parser";
+import { createFileSystemReader } from "./lib/vfs";
 
 const cli = cac("ts-shift");
 
@@ -19,7 +20,7 @@ cli
         o?: string;
       }
     ) => {
-      const types = parse([path.resolve(entry)]);
+      const types = parse(createFileSystemReader(), [path.resolve(entry)]);
       const generated = generate(types);
       if (options.o) {
         writeFileSync(path.resolve(options.o), generated, "utf8");
