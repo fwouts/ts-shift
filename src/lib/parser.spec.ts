@@ -87,6 +87,56 @@ describe("Parser", () => {
   );
 
   test(
+    "parses object types",
+    `
+    type A = {
+      foo: string,
+      bar?: number;
+    }
+    interface B {
+      foo: string,
+      bar?: number;
+    }
+    `,
+    {
+      A: {
+        kind: "object",
+        properties: {
+          foo: {
+            type: {
+              kind: "string",
+            },
+            required: true,
+          },
+          bar: {
+            type: {
+              kind: "number",
+            },
+            required: false,
+          },
+        },
+      },
+      B: {
+        kind: "object",
+        properties: {
+          foo: {
+            type: {
+              kind: "string",
+            },
+            required: true,
+          },
+          bar: {
+            type: {
+              kind: "number",
+            },
+            required: false,
+          },
+        },
+      },
+    }
+  );
+
+  test(
     "parses string types",
     `
     type A = string;
