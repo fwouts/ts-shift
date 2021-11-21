@@ -3,9 +3,9 @@ import cac from "cac";
 import chalk from "chalk";
 import { writeFileSync } from "fs";
 import path from "path";
-import { generate } from "./lib/generator";
-import { parse } from "./lib/parser";
-import { createFileSystemReader } from "./lib/vfs";
+import { generate } from "../lib/generator";
+import { parse } from "../lib/parser";
+import { createFileSystemReader } from "../lib/vfs";
 
 const cli = cac("ts-shift");
 
@@ -32,6 +32,6 @@ cli
   );
 
 cli.help();
-cli.version(require("../package.json").version);
+cli.version(require("../../package.json").version);
 
 cli.parse();

@@ -4,12 +4,12 @@
   "author": "François Wouts <f@zenc.io>",
   "license": "MIT",
   "bin": {
-    "ts-shift": "./dist/main.js"
+    "ts-shift": "./dist/cli/main.js"
   },
   "scripts": {
     "prepublish": "yarn build",
     "build": "rimraf dist && tsc",
-    "dev:generate": "ts-node-dev --respawn --watch examples src/main.ts examples/user.ts -o generated/user.ts",
+    "dev:generate": "ts-node-dev --respawn --watch examples src/cli/main.ts examples/user.ts -o generated/user.ts",
     "dev:usage": "ts-node-dev --respawn examples/usage.ts"
   },
   "dependencies": {
