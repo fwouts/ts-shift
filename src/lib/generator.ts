@@ -12,10 +12,13 @@ export function generate(types: Record<string, Type>) {
       name: ${JSON.stringify(name)},
       schema: ${generateSchema(type)},
       create(__value__: unknown) {
-        ${name}.validate(__value__);
+        ${name}.validate(__value__, { allowAdditionalProperties: true });
         return ${generateTypeSanitizer(type, "__value__", [name])}
       },
-      validate(__value__: unknown, { errorCatcher } = {}): __value__ is ${name} {
+      validate(
+        __value__: unknown,
+        { errorCatcher, allowAdditionalProperties } = {}
+      ): __value__ is ${name} {
         try {
           ${generateTypeValidator(type, "__value__", [name])}
           return true;
@@ -71,6 +74,7 @@ export function generate(types: Record<string, Type>) {
     create<S = T>(value: S): T;
     validate<S = T>(value: S, options?: {
       errorCatcher?: ErrorCatcher,
+      allowAdditionalProperties?: boolean | undefined,
     }): boolean;
   }
 
@@ -230,7 +234,7 @@ function generateTypeValidator(
   switch (type.kind) {
     case "alias":
       return `
-      ${type.name}.validate(${value});
+      ${type.name}.validate(${value}, { allowAdditionalProperties });
       `.trim();
     case "any":
       return "";
@@ -262,11 +266,22 @@ function generateTypeValidator(
       `.trim();
     case "object":
       const variableName = variableNameFromPath(path);
+      const allowedKeys = Object.keys(type.properties);
       return `
       if (typeof(${value}) !== 'object' || ${value} === null) {
         fail("${path.join(".")} is not an object", ${value});
       }
       const ${variableName} = ${value} as any;
+      if (!allowAdditionalProperties) {
+        const allowedKeys = new Set([
+          ${allowedKeys.map((value) => JSON.stringify(value)).join(",")}
+        ]);
+        for (const key of Object.keys(${variableName})) {
+          if (!allowedKeys.has(key)) {
+            fail("${path.join(".")} does not allow key " + key, ${value});
+          }
+        }
+      }
       ${Object.entries(type.properties)
         .map(([name, property]) => {
           const propertyAccessor = `${variableName}["${name}"]`;

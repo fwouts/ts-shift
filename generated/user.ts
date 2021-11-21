@@ -30,7 +30,7 @@ export const Address: Type<Address> = {
     },
   },
   create(__value__: unknown) {
-    Address.validate(__value__);
+    Address.validate(__value__, { allowAdditionalProperties: true });
     return (() => {
       const address: any = __value__;
       const address_sanitized: any = {};
@@ -40,12 +40,23 @@ export const Address: Type<Address> = {
       return address_sanitized;
     })();
   },
-  validate(__value__: unknown, { errorCatcher } = {}): __value__ is Address {
+  validate(
+    __value__: unknown,
+    { errorCatcher, allowAdditionalProperties } = {}
+  ): __value__ is Address {
     try {
       if (typeof __value__ !== "object" || __value__ === null) {
         fail("Address is not an object", __value__);
       }
       const address = __value__ as any;
+      if (!allowAdditionalProperties) {
+        const allowedKeys = new Set(["street", "city", "postCode"]);
+        for (const key of Object.keys(address)) {
+          if (!allowedKeys.has(key)) {
+            fail("Address does not allow key " + key, __value__);
+          }
+        }
+      }
       if (typeof address["street"] !== "string") {
         fail("Address.street is not a string", address["street"]);
       }
@@ -138,7 +149,7 @@ export const User: Type<User> = {
     },
   },
   create(__value__: unknown) {
-    User.validate(__value__);
+    User.validate(__value__, { allowAdditionalProperties: true });
     return (() => {
       const user: any = __value__;
       const user_sanitized: any = {};
@@ -166,16 +177,35 @@ export const User: Type<User> = {
       return user_sanitized;
     })();
   },
-  validate(__value__: unknown, { errorCatcher } = {}): __value__ is User {
+  validate(
+    __value__: unknown,
+    { errorCatcher, allowAdditionalProperties } = {}
+  ): __value__ is User {
     try {
       if (typeof __value__ !== "object" || __value__ === null) {
         fail("User is not an object", __value__);
       }
       const user = __value__ as any;
+      if (!allowAdditionalProperties) {
+        const allowedKeys = new Set(["name", "address", "test", "parent"]);
+        for (const key of Object.keys(user)) {
+          if (!allowedKeys.has(key)) {
+            fail("User does not allow key " + key, __value__);
+          }
+        }
+      }
       if (typeof user["name"] !== "object" || user["name"] === null) {
         fail("User.name is not an object", user["name"]);
       }
       const user_name = user["name"] as any;
+      if (!allowAdditionalProperties) {
+        const allowedKeys = new Set(["first", "last"]);
+        for (const key of Object.keys(user_name)) {
+          if (!allowedKeys.has(key)) {
+            fail("User.name does not allow key " + key, user["name"]);
+          }
+        }
+      }
       if (user_name["first"] !== undefined) {
         if (typeof user_name["first"] !== "string") {
           fail("User.name.first is not a string", user_name["first"]);
@@ -184,18 +214,26 @@ export const User: Type<User> = {
       if (typeof user_name["last"] !== "string") {
         fail("User.name.last is not a string", user_name["last"]);
       }
-      Address.validate(user["address"]);
+      Address.validate(user["address"], { allowAdditionalProperties });
       if (user["test"] !== undefined) {
         if (typeof user["test"] !== "object" || user["test"] === null) {
           fail("User.test is not an object", user["test"]);
         }
         const user_test = user["test"] as any;
+        if (!allowAdditionalProperties) {
+          const allowedKeys = new Set(["value"]);
+          for (const key of Object.keys(user_test)) {
+            if (!allowedKeys.has(key)) {
+              fail("User.test does not allow key " + key, user["test"]);
+            }
+          }
+        }
         if (typeof user_test["value"] !== "string") {
           fail("User.test.value is not a string", user_test["value"]);
         }
       }
       if (user["parent"] !== undefined) {
-        User.validate(user["parent"]);
+        User.validate(user["parent"], { allowAdditionalProperties });
       }
       return true;
     } catch (e: any) {
@@ -247,6 +285,7 @@ export type Type<T> = {
     value: S,
     options?: {
       errorCatcher?: ErrorCatcher;
+      allowAdditionalProperties?: boolean | undefined;
     }
   ): boolean;
 };
