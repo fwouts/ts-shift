@@ -221,10 +221,10 @@ export const User: Type<User> = {
 function fail(message: string, value: unknown): never {
   let debugValue: string;
   try {
-    debugValue = JSON.stringify(debugValue, null, 2);
+    debugValue = JSON.stringify(value, null, 2);
   } catch (e) {
     // Not representable in JSON.
-    debugValue = `${debugValue}`;
+    debugValue = `${value}`;
   }
   throw new ValidationError(message + ":\n" + debugValue);
 }
