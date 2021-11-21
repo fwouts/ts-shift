@@ -246,8 +246,8 @@ export interface ErrorCatcher {
 }
 
 export type Type<T> = {
-  name: string;
-  schema: Schema;
+  readonly name: string;
+  readonly schema: Schema;
   create<S = T>(value: S): T;
   validate<S = T>(
     value: S,
