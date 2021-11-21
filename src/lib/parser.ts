@@ -68,6 +68,14 @@ export function parse(reader: Reader, filePaths: string[]) {
     }
     for (const statement of sourceFile.statements) {
       if (
+        !statement.modifiers?.find(
+          (m) => m.kind === ts.SyntaxKind.ExportKeyword
+        )
+      ) {
+        // Only generate exported types.
+        continue;
+      }
+      if (
         ts.isTypeAliasDeclaration(statement) ||
         ts.isInterfaceDeclaration(statement)
       ) {

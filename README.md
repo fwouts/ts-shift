@@ -16,7 +16,7 @@ Say you're building a POST endpoint for user sign-up. Simply define a request ty
 
 ```ts
 // api/create-user-request.ts
-type CreateUserRequest = {
+export type CreateUserRequest = {
   email: string;
   password: string;
 };

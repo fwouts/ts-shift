@@ -12,14 +12,11 @@ describe("Parser", () => {
   test(
     "alias types",
     `
-    type A = B;
+    export type A = B;
     type B = string;
     `,
     {
       A: {
-        kind: "string",
-      },
-      B: {
         kind: "string",
       },
     }
@@ -28,9 +25,9 @@ describe("Parser", () => {
   test(
     "boolean types",
     `
-    type A = boolean;
-    type B = false;
-    type C = true;
+    export type A = boolean;
+    export type B = false;
+    export type C = true;
     `,
     {
       A: {
@@ -50,7 +47,7 @@ describe("Parser", () => {
   test(
     "null types",
     `
-    type A = null;
+    export type A = null;
     `,
     {
       A: {
@@ -62,10 +59,10 @@ describe("Parser", () => {
   test(
     "number types",
     `
-    type A = number;
-    type B = 123;
-    type C = -123;
-    type D = 0;
+    export type A = number;
+    export type B = 123;
+    export type C = -123;
+    export type D = 0;
     `,
     {
       A: {
@@ -89,13 +86,25 @@ describe("Parser", () => {
   test(
     "object types",
     `
-    type A = {
-      foo: string,
+    export type A = {
+      foo: string;
       bar?: number;
+      baz: C;
+      baz2: D;
+      recursive?: A;
     }
-    interface B {
-      foo: string,
+    export interface B {
+      foo: string;
       bar?: number;
+      baz: C;
+      baz2: D;
+      recursive?: B;
+    }
+    type C = {
+      qux: string;
+    }
+    interface D {
+      qux2: string;
     }
     `,
     {
@@ -111,6 +120,27 @@ describe("Parser", () => {
           bar: {
             type: {
               kind: "number",
+            },
+            required: false,
+          },
+          baz: {
+            type: {
+              kind: "alias",
+              name: "C",
+            },
+            required: true,
+          },
+          baz2: {
+            type: {
+              kind: "alias",
+              name: "D",
+            },
+            required: true,
+          },
+          recursive: {
+            type: {
+              kind: "alias",
+              name: "A",
             },
             required: false,
           },
@@ -131,6 +161,49 @@ describe("Parser", () => {
             },
             required: false,
           },
+          baz: {
+            type: {
+              kind: "alias",
+              name: "C",
+            },
+            required: true,
+          },
+          baz2: {
+            type: {
+              kind: "alias",
+              name: "D",
+            },
+            required: true,
+          },
+          recursive: {
+            type: {
+              kind: "alias",
+              name: "B",
+            },
+            required: false,
+          },
+        },
+      },
+      C: {
+        kind: "object",
+        properties: {
+          qux: {
+            type: {
+              kind: "string",
+            },
+            required: true,
+          },
+        },
+      },
+      D: {
+        kind: "object",
+        properties: {
+          qux2: {
+            type: {
+              kind: "string",
+            },
+            required: true,
+          },
         },
       },
     }
@@ -139,9 +212,9 @@ describe("Parser", () => {
   test(
     "string types",
     `
-    type A = string;
-    type B = "";
-    type C = "foo";
+    export type A = string;
+    export type B = "";
+    export type C = "foo";
     `,
     {
       A: {
@@ -161,8 +234,8 @@ describe("Parser", () => {
   test(
     "undefined types",
     `
-    type A = undefined;
-    type B = void;
+    export type A = undefined;
+    export type B = void;
     `,
     {
       A: {
@@ -177,10 +250,10 @@ describe("Parser", () => {
   test(
     "union types",
     `
-    type A = B | C;
+    export type A = B | C;
     type B = string;
     type C = number;
-    type D = "foo" | "bar";
+    export type D = "foo" | "bar";
     `,
     {
       A: {
@@ -193,12 +266,6 @@ describe("Parser", () => {
             kind: "number",
           },
         ],
-      },
-      B: {
-        kind: "string",
-      },
-      C: {
-        kind: "number",
       },
       D: {
         kind: "union",
