@@ -12,7 +12,7 @@ pnpm add -D ts-shift # pnpm
 
 ## Example: validating incoming requests
 
-Say you're building a POST endpoint for user sign-up. Simply define a request type in TypeScript:
+Say you're building a POST endpoint for user sign-up. Define a request type in TypeScript:
 
 ```ts
 // api/create-user-request.ts
@@ -53,7 +53,7 @@ Now, any invalid payload will throw an error, and additional properties will be 
 
 ## Status
 
-This package was created in November 2021. It's lacking tests, so usage in production is not yet encouraged.
+This package was created in November 2021. It's lacking some tests, but you can use it in production already. Simply review the generated code as if a co-worker had written it! 
 
 ## License
 
