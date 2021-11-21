@@ -10,7 +10,7 @@ describe("Parser", () => {
   });
 
   test(
-    "parses alias types",
+    "alias types",
     `
     type A = B;
     type B = string;
@@ -26,7 +26,7 @@ describe("Parser", () => {
   );
 
   test(
-    "parses boolean types",
+    "boolean types",
     `
     type A = boolean;
     type B = false;
@@ -48,7 +48,7 @@ describe("Parser", () => {
   );
 
   test(
-    "parses null types",
+    "null types",
     `
     type A = null;
     `,
@@ -60,7 +60,7 @@ describe("Parser", () => {
   );
 
   test(
-    "parses number types",
+    "number types",
     `
     type A = number;
     type B = 123;
@@ -87,7 +87,7 @@ describe("Parser", () => {
   );
 
   test(
-    "parses object types",
+    "object types",
     `
     type A = {
       foo: string,
@@ -137,7 +137,7 @@ describe("Parser", () => {
   );
 
   test(
-    "parses string types",
+    "string types",
     `
     type A = string;
     type B = "";
@@ -159,7 +159,7 @@ describe("Parser", () => {
   );
 
   test(
-    "parses undefined types",
+    "undefined types",
     `
     type A = undefined;
     type B = void;
@@ -175,7 +175,7 @@ describe("Parser", () => {
   );
 
   test(
-    "parses union types",
+    "union types",
     `
     type A = B | C;
     type B = string;
