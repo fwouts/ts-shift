@@ -420,6 +420,7 @@ function generateTypeSanitizer(
             .map(
               (subtype, i) => `
           try {
+            const allowAdditionalProperties = true;
             ${generateTypeValidator(subtype, value, [
               ...path,
               i.toString(10),
