@@ -75,8 +75,8 @@ export function generate(types: Record<string, Type>) {
   export type Type<T> = {
     readonly name: string;
     readonly schema: Schema;
-    create<S = T>(value: S): T;
-    validate<S = T>(value: S, options?: ValidateOptions): boolean;
+    create(value: unknown): T;
+    validate(value: unknown, options?: ValidateOptions): boolean;
   }
 
   export interface ValidateOptions {
@@ -86,42 +86,42 @@ export function generate(types: Record<string, Type>) {
 
   export type Schema =
   | {
-      kind: "alias";
-      type: () => Type<unknown>;
+      readonly kind: "alias";
+      readonly type: () => Type<unknown>;
     }
   | {
-      kind: "any";
+      readonly kind: "any";
     }
   | {
-      kind: "array";
-      schema: Schema;
+      readonly kind: "array";
+      readonly schema: Schema;
     }
   | {
-      kind: "boolean";
+      readonly kind: "boolean";
     }
   | {
-      kind: "literal";
-      value: boolean | number | string;
+      readonly kind: "literal";
+      readonly value: boolean | number | string;
     }
   | {
-      kind: "null";
+      readonly kind: "null";
     }
   | {
-      kind: "number";
+      readonly kind: "number";
     }
   | {
-      kind: "object";
-      properties: Record<string, ObjectSchemaProperty>;
+      readonly kind: "object";
+      readonly properties: Readonly<Record<string, ObjectSchemaProperty>>;
     }
   | {
-      kind: "string";
+      readonly kind: "string";
     }
   | {
-      kind: "undefined";
+      readonly kind: "undefined";
     }
   | {
-      kind: "union";
-      schemas: Schema[];
+      readonly kind: "union";
+      readonly schemas: ReadonlyArray<Schema>;
     };
 
   export type ObjectSchemaProperty = {
