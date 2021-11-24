@@ -420,15 +420,14 @@ function generateTypeSanitizer(
             .map(
               (subtype, i) => `
           try {
-            if (${generateTypeValidator(subtype, value, [
+            ${generateTypeValidator(subtype, value, [
               ...path,
               i.toString(10),
-            ])}) {
-              return ${generateTypeSanitizer(subtype, value, [
-                ...path,
-                i.toString(10),
-              ])}
-            }
+            ])}
+            return ${generateTypeSanitizer(subtype, value, [
+              ...path,
+              i.toString(10),
+            ])}
           } catch (e) {
             if (e instanceof ValidationError) {
               // Ignore, another subtype will be fine.
