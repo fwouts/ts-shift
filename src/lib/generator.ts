@@ -314,10 +314,14 @@ function generateTypeSanitizer(
     case "union":
       return `union: {
           ${type.types
-            .map(
-              (subtype) => `
+            .map((subtype, i) => {
+              const subtypePath = [...path, i.toString(10)];
+              const subtypeVariableName = variableNameFromPath(subtypePath);
+              return `
           try {
-            ${generateTypeSanitizer(subtype, value, assignTo, path)}
+            let ${subtypeVariableName}: ${generateTypeDeclaration(subtype)};
+            ${generateTypeSanitizer(subtype, value, subtypeVariableName, path)}
+            ${assignTo} = ${subtypeVariableName};
             break union;
           } catch (e) {
             if (e instanceof ValidationError) {
@@ -325,8 +329,8 @@ function generateTypeSanitizer(
             } else {
               throw e;
             }
-          }`
-            )
+          }`;
+            })
             .join("")}
           fail("${path.join(
             "."
