@@ -12,32 +12,10 @@ export function generate(types: Record<string, Type>) {
       name: ${JSON.stringify(name)},
       schema: ${generateSchema(type)},
       create(__value__: ${name}): ${name} {
-        if (!${name}.validate(__value__, { allowAdditionalProperties: true })) {
-          // This error will never be thrown because
-          // validate() already throws.
-          throw new ValidationError();
-        }
-        return ${generateTypeSanitizer(type, "__value__", [name])}
+        let result: ${name};
+        ${generateTypeSanitizer(type, "__value__", "result", [name])};
+        return result;
       },
-      validate(
-        __value__: ${name},
-        { errorCatcher, allowAdditionalProperties }: ValidateOptions = {}
-      ): __value__ is ${name} {
-        try {
-          ${generateTypeValidator(type, "__value__", [name])}
-          return true;
-        } catch (e: any) {
-          if (!(e instanceof ValidationError)) {
-            throw e;
-          }
-          if (errorCatcher) {
-            errorCatcher.error = e.message;
-            return false;
-          } else {
-            throw e;
-          }
-        }
-      }
     } as const);
     `
     )
@@ -62,26 +40,10 @@ export function generate(types: Record<string, Type>) {
     }
   }
 
-  export function createErrorCatcher(): ErrorCatcher {
-    return {
-      error: ''
-    }
-  }
-
-  export interface ErrorCatcher {
-    error: string
-  }
-
   export type Type<T> = {
     readonly name: string;
     readonly schema: Schema;
     create(value: unknown): T;
-    validate(value: unknown, options?: ValidateOptions): boolean;
-  }
-
-  export interface ValidateOptions {
-    errorCatcher?: ErrorCatcher,
-    allowAdditionalProperties?: boolean | undefined,
   }
 
   export type Schema =
@@ -243,25 +205,33 @@ function generateTypeDeclaration(type: Type): string {
   }
 }
 
-function generateTypeValidator(
+function generateTypeSanitizer(
   type: Type,
   value: string,
+  assignTo: string,
   path: string[]
 ): string {
   switch (type.kind) {
     case "alias":
       return `
-      ${type.name}.validate(${value}, { allowAdditionalProperties });
+      ${assignTo} = ${type.name}.create(${value});
       `.trim();
     case "any":
-      return "";
+      return `
+      ${assignTo} = ${value};
+      `.trim();
     case "array":
+      const itemPath = [...path, "item"];
+      const itemVariableName = variableNameFromPath(itemPath);
       return `
       if (!Array.isArray(${value})) {
         fail("${path.join(".")} is not an array", ${value});
       }
+      ${assignTo} = [];
       for (const item of ${value}) {
-        ${generateTypeValidator(type.type, "item", [...path, "__item__"])}
+        let ${itemVariableName};
+        ${generateTypeSanitizer(type.type, "item", itemVariableName, itemPath)}
+        ${assignTo}.push(${itemVariableName});
       }
       `.trim();
     case "boolean":
@@ -269,6 +239,7 @@ function generateTypeValidator(
       if (typeof(${value}) !== 'boolean') {
         fail("${path.join(".")} is not a boolean", ${value});
       }
+      ${assignTo} = ${value};
       `.trim();
     case "literal":
       return `
@@ -277,58 +248,62 @@ function generateTypeValidator(
         type.value
       )}", ${value});
       }
+      ${assignTo} = ${value};
       `.trim();
     case "null":
       return `
       if (${value} !== null) {
         fail("${path.join(".")} is not null", ${value});
       }
+      ${assignTo} = null;
       `.trim();
     case "number":
       return `
       if (typeof(${value}) !== 'number') {
         fail("${path.join(".")} is not a number", ${value});
       }
+      ${assignTo} = ${value};
       `.trim();
     case "object":
-      const variableName = variableNameFromPath(path);
-      const allowedKeys = Object.keys(type.properties);
+      const localName = variableNameFromPath(path);
       return `
-      if (typeof(${value}) !== 'object' || ${value} === null) {
-        fail("${path.join(".")} is not an object", ${value});
-      }
-      const ${variableName} = ${value} as any;
-      if (!allowAdditionalProperties) {
-        const allowedKeys = new Set([
-          ${allowedKeys.map((value) => JSON.stringify(value)).join(",")}
-        ]);
-        for (const key of Object.keys(${variableName})) {
-          if (!allowedKeys.has(key)) {
-            fail("${path.join(".")} does not allow key " + key, ${value});
-          }
+        if (typeof(${value}) !== 'object' || ${value} === null) {
+          fail("${path.join(".")} is not an object", ${value});
         }
-      }
-      ${Object.entries(type.properties)
-        .map(([name, property]) => {
-          const propertyAccessor = `${variableName}["${name}"]`;
-          let checks = generateTypeValidator(property.type, propertyAccessor, [
-            ...path,
-            name,
-          ]);
-          if (!property.required) {
-            checks = `if (${propertyAccessor} !== undefined) {
-            ${checks}
-          }`;
-          }
-          return checks;
-        })
-        .join("")}
+        const _${localName}: any = ${value};
+        ${assignTo} = {} as any;
+        ${Object.entries(type.properties)
+          .map(([name, property]) => {
+            const propertyAccessor = `_${localName}["${name}"]`;
+            const propertyPath = [...path, name];
+            const propertyVariableName = variableNameFromPath(propertyPath);
+            let statement = `
+            let ${propertyVariableName}: ${generateTypeDeclaration(
+              property.type
+            )}
+            ${generateTypeSanitizer(
+              property.type,
+              propertyAccessor,
+              propertyVariableName,
+              propertyPath
+            )}
+            ${assignTo}["${name}"] = ${propertyVariableName};
+            `.trim();
+            if (!property.required) {
+              statement = `if (${propertyAccessor} !== undefined) {
+                ${statement}
+              }`;
+            }
+            return statement;
+          })
+          .join("")}
       `.trim();
     case "string":
       return `
       if (typeof(${value}) !== 'string') {
         fail("${path.join(".")} is not a string", ${value});
       }
+      ${assignTo} = ${value};
       `.trim();
     case "undefined":
       return `
@@ -337,109 +312,26 @@ function generateTypeValidator(
       }
       `.trim();
     case "union":
-      // TODO: Improve support for discriminated types, so when we
-      // know for sure that it's supposed to be a specific one, we
-      // give the error that is most relevant (as opposed to an error
-      // related to the last possible type).
       return `union: {
-        let error: ValidationError | null = null;
-        ${type.types
-          .map(
-            (subtype, i) => `
-        try {
-          ${generateTypeValidator(subtype, value, [...path, i.toString(10)])}
-          break union;
-        } catch (e) {
-          if (!(e instanceof ValidationError)) {
-            throw e;
-          }
-          error = e;
-        }
-        `
-          )
-          .join("")}
-        throw error;
-      }`.trim();
-    default:
-      throw assertNever(type);
-  }
-}
-
-function generateTypeSanitizer(
-  type: Type,
-  value: string,
-  path: string[]
-): string {
-  switch (type.kind) {
-    case "alias":
-      return `${type.name}.create(${value})`;
-    case "any":
-      return value;
-    case "array":
-      return `(${value} as Array<any>).map(item => ${generateTypeSanitizer(
-        type.type,
-        "item",
-        [...path, "__item__"]
-      )})`;
-    case "boolean":
-      return value;
-    case "literal":
-      return value;
-    case "null":
-      return value;
-    case "number":
-      return value;
-    case "object":
-      const localName = variableNameFromPath(path);
-      return `(() => {
-        const ${localName}: any = ${value};
-        const ${localName}_sanitized: any = {};
-        ${Object.entries(type.properties)
-          .map(([name, property]) => {
-            const propertyAccessor = `${localName}["${name}"]`;
-            let statement = `${localName}_sanitized["${name}"] = ${generateTypeSanitizer(
-              property.type,
-              propertyAccessor,
-              [...path, name]
-            )};`;
-            if (!property.required) {
-              statement = `if (${propertyAccessor} !== undefined) { ${statement} }`;
-            }
-            return statement;
-          })
-          .join("")}
-        return ${localName}_sanitized;
-      })()`;
-    case "string":
-      return value;
-    case "undefined":
-      return value;
-    case "union":
-      return `(() => {
           ${type.types
             .map(
-              (subtype, i) => `
+              (subtype) => `
           try {
-            const allowAdditionalProperties = true;
-            ${generateTypeValidator(subtype, value, [
-              ...path,
-              i.toString(10),
-            ])}
-            return ${generateTypeSanitizer(subtype, value, [
-              ...path,
-              i.toString(10),
-            ])}
+            ${generateTypeSanitizer(subtype, value, assignTo, path)}
+            break union;
           } catch (e) {
             if (e instanceof ValidationError) {
               // Ignore, another subtype will be fine.
             } else {
               throw e;
             }
-          }
-          `
+          }`
             )
             .join("")}
-        })()`;
+          fail("${path.join(
+            "."
+          )} does not match any possible union type", ${value});
+        }`.trim();
     default:
       throw assertNever(type);
   }

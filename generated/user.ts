@@ -30,58 +30,31 @@ export const Address = Object.freeze({
     },
   },
   create(__value__: Address): Address {
-    if (!Address.validate(__value__, { allowAdditionalProperties: true })) {
-      // This error will never be thrown because
-      // validate() already throws.
-      throw new ValidationError();
+    let result: Address;
+    if (typeof __value__ !== "object" || __value__ === null) {
+      fail("Address is not an object", __value__);
     }
-    return (() => {
-      const address: any = __value__;
-      const address_sanitized: any = {};
-      address_sanitized["street"] = address["street"];
-      address_sanitized["city"] = address["city"];
-      address_sanitized["postCode"] = address["postCode"];
-      return address_sanitized;
-    })();
-  },
-  validate(
-    __value__: Address,
-    { errorCatcher, allowAdditionalProperties }: ValidateOptions = {}
-  ): __value__ is Address {
-    try {
-      if (typeof __value__ !== "object" || __value__ === null) {
-        fail("Address is not an object", __value__);
-      }
-      const address = __value__ as any;
-      if (!allowAdditionalProperties) {
-        const allowedKeys = new Set(["street", "city", "postCode"]);
-        for (const key of Object.keys(address)) {
-          if (!allowedKeys.has(key)) {
-            fail("Address does not allow key " + key, __value__);
-          }
-        }
-      }
-      if (typeof address["street"] !== "string") {
-        fail("Address.street is not a string", address["street"]);
-      }
-      if (typeof address["city"] !== "string") {
-        fail("Address.city is not a string", address["city"]);
-      }
-      if (typeof address["postCode"] !== "number") {
-        fail("Address.postCode is not a number", address["postCode"]);
-      }
-      return true;
-    } catch (e: any) {
-      if (!(e instanceof ValidationError)) {
-        throw e;
-      }
-      if (errorCatcher) {
-        errorCatcher.error = e.message;
-        return false;
-      } else {
-        throw e;
-      }
+    const _address: any = __value__;
+    result = {} as any;
+    let address_street: string;
+    if (typeof _address["street"] !== "string") {
+      fail("Address.street is not a string", _address["street"]);
     }
+    address_street = _address["street"];
+    result["street"] = address_street;
+    let address_city: string;
+    if (typeof _address["city"] !== "string") {
+      fail("Address.city is not a string", _address["city"]);
+    }
+    address_city = _address["city"];
+    result["city"] = address_city;
+    let address_postCode: number;
+    if (typeof _address["postCode"] !== "number") {
+      fail("Address.postCode is not a number", _address["postCode"]);
+    }
+    address_postCode = _address["postCode"];
+    result["postCode"] = address_postCode;
+    return result;
   },
 } as const);
 
@@ -164,123 +137,73 @@ export const User = Object.freeze({
     },
   },
   create(__value__: User): User {
-    if (!User.validate(__value__, { allowAdditionalProperties: true })) {
-      // This error will never be thrown because
-      // validate() already throws.
-      throw new ValidationError();
+    let result: User;
+    if (typeof __value__ !== "object" || __value__ === null) {
+      fail("User is not an object", __value__);
     }
-    return (() => {
-      const user: any = __value__;
-      const user_sanitized: any = {};
-      user_sanitized["name"] = (() => {
-        const user_name: any = user["name"];
-        const user_name_sanitized: any = {};
-        if (user_name["first"] !== undefined) {
-          user_name_sanitized["first"] = user_name["first"];
-        }
-        user_name_sanitized["last"] = user_name["last"];
-        return user_name_sanitized;
-      })();
-      user_sanitized["address"] = Address.create(user["address"]);
-      if (user["test"] !== undefined) {
-        user_sanitized["test"] = (() => {
-          const user_test: any = user["test"];
-          const user_test_sanitized: any = {};
-          user_test_sanitized["value"] = user_test["value"];
-          return user_test_sanitized;
-        })();
-      }
-      if (user["parent"] !== undefined) {
-        user_sanitized["parent"] = User.create(user["parent"]);
-      }
-      user_sanitized["siblings"] = (user["siblings"] as Array<any>).map(
-        (item) => User.create(item)
-      );
-      return user_sanitized;
-    })();
-  },
-  validate(
-    __value__: User,
-    { errorCatcher, allowAdditionalProperties }: ValidateOptions = {}
-  ): __value__ is User {
-    try {
-      if (typeof __value__ !== "object" || __value__ === null) {
-        fail("User is not an object", __value__);
-      }
-      const user = __value__ as any;
-      if (!allowAdditionalProperties) {
-        const allowedKeys = new Set([
-          "name",
-          "address",
-          "test",
-          "parent",
-          "siblings",
-        ]);
-        for (const key of Object.keys(user)) {
-          if (!allowedKeys.has(key)) {
-            fail("User does not allow key " + key, __value__);
-          }
-        }
-      }
-      if (typeof user["name"] !== "object" || user["name"] === null) {
-        fail("User.name is not an object", user["name"]);
-      }
-      const user_name = user["name"] as any;
-      if (!allowAdditionalProperties) {
-        const allowedKeys = new Set(["first", "last"]);
-        for (const key of Object.keys(user_name)) {
-          if (!allowedKeys.has(key)) {
-            fail("User.name does not allow key " + key, user["name"]);
-          }
-        }
-      }
-      if (user_name["first"] !== undefined) {
-        if (typeof user_name["first"] !== "string") {
-          fail("User.name.first is not a string", user_name["first"]);
-        }
-      }
-      if (typeof user_name["last"] !== "string") {
-        fail("User.name.last is not a string", user_name["last"]);
-      }
-      Address.validate(user["address"], { allowAdditionalProperties });
-      if (user["test"] !== undefined) {
-        if (typeof user["test"] !== "object" || user["test"] === null) {
-          fail("User.test is not an object", user["test"]);
-        }
-        const user_test = user["test"] as any;
-        if (!allowAdditionalProperties) {
-          const allowedKeys = new Set(["value"]);
-          for (const key of Object.keys(user_test)) {
-            if (!allowedKeys.has(key)) {
-              fail("User.test does not allow key " + key, user["test"]);
-            }
-          }
-        }
-        if (typeof user_test["value"] !== "string") {
-          fail("User.test.value is not a string", user_test["value"]);
-        }
-      }
-      if (user["parent"] !== undefined) {
-        User.validate(user["parent"], { allowAdditionalProperties });
-      }
-      if (!Array.isArray(user["siblings"])) {
-        fail("User.siblings is not an array", user["siblings"]);
-      }
-      for (const item of user["siblings"]) {
-        User.validate(item, { allowAdditionalProperties });
-      }
-      return true;
-    } catch (e: any) {
-      if (!(e instanceof ValidationError)) {
-        throw e;
-      }
-      if (errorCatcher) {
-        errorCatcher.error = e.message;
-        return false;
-      } else {
-        throw e;
-      }
+    const _user: any = __value__;
+    result = {} as any;
+    let user_name: {
+      first?: string;
+      last: string;
+    };
+    if (typeof _user["name"] !== "object" || _user["name"] === null) {
+      fail("User.name is not an object", _user["name"]);
     }
+    const _user_name: any = _user["name"];
+    user_name = {} as any;
+    if (_user_name["first"] !== undefined) {
+      let user_name_first: string;
+      if (typeof _user_name["first"] !== "string") {
+        fail("User.name.first is not a string", _user_name["first"]);
+      }
+      user_name_first = _user_name["first"];
+      user_name["first"] = user_name_first;
+    }
+    let user_name_last: string;
+    if (typeof _user_name["last"] !== "string") {
+      fail("User.name.last is not a string", _user_name["last"]);
+    }
+    user_name_last = _user_name["last"];
+    user_name["last"] = user_name_last;
+    result["name"] = user_name;
+    let user_address: Address;
+    user_address = Address.create(_user["address"]);
+    result["address"] = user_address;
+    if (_user["test"] !== undefined) {
+      let user_test: {
+        value: string;
+      };
+      if (typeof _user["test"] !== "object" || _user["test"] === null) {
+        fail("User.test is not an object", _user["test"]);
+      }
+      const _user_test: any = _user["test"];
+      user_test = {} as any;
+      let user_test_value: string;
+      if (typeof _user_test["value"] !== "string") {
+        fail("User.test.value is not a string", _user_test["value"]);
+      }
+      user_test_value = _user_test["value"];
+      user_test["value"] = user_test_value;
+      result["test"] = user_test;
+    }
+    if (_user["parent"] !== undefined) {
+      let user_parent: User;
+      user_parent = User.create(_user["parent"]);
+      result["parent"] = user_parent;
+    }
+    let user_siblings: Array<User>;
+    if (!Array.isArray(_user["siblings"])) {
+      fail("User.siblings is not an array", _user["siblings"]);
+    }
+    user_siblings = [];
+    for (const item of _user["siblings"]) {
+      let user_siblings_item;
+      user_siblings_item = User.create(item);
+      user_siblings.push(user_siblings_item);
+    }
+    result["siblings"] = user_siblings;
+    return result;
   },
 } as const);
 
@@ -296,36 +219,17 @@ export const UserList = Object.freeze({
     },
   },
   create(__value__: UserList): UserList {
-    if (!UserList.validate(__value__, { allowAdditionalProperties: true })) {
-      // This error will never be thrown because
-      // validate() already throws.
-      throw new ValidationError();
+    let result: UserList;
+    if (!Array.isArray(__value__)) {
+      fail("UserList is not an array", __value__);
     }
-    return (__value__ as Array<any>).map((item) => User.create(item));
-  },
-  validate(
-    __value__: UserList,
-    { errorCatcher, allowAdditionalProperties }: ValidateOptions = {}
-  ): __value__ is UserList {
-    try {
-      if (!Array.isArray(__value__)) {
-        fail("UserList is not an array", __value__);
-      }
-      for (const item of __value__) {
-        User.validate(item, { allowAdditionalProperties });
-      }
-      return true;
-    } catch (e: any) {
-      if (!(e instanceof ValidationError)) {
-        throw e;
-      }
-      if (errorCatcher) {
-        errorCatcher.error = e.message;
-        return false;
-      } else {
-        throw e;
-      }
+    result = [];
+    for (const item of __value__) {
+      let userList_item;
+      userList_item = User.create(item);
+      result.push(userList_item);
     }
+    return result;
   },
 } as const);
 
@@ -346,66 +250,50 @@ export class ValidationError extends Error {
   }
 }
 
-export function createErrorCatcher(): ErrorCatcher {
-  return {
-    error: "",
-  };
-}
-
-export interface ErrorCatcher {
-  error: string;
-}
-
 export type Type<T> = {
   readonly name: string;
   readonly schema: Schema;
-  create<S = T>(value: S): T;
-  validate<S = T>(value: S, options?: ValidateOptions): boolean;
+  create(value: unknown): T;
 };
-
-export interface ValidateOptions {
-  errorCatcher?: ErrorCatcher;
-  allowAdditionalProperties?: boolean | undefined;
-}
 
 export type Schema =
   | {
-      kind: "alias";
-      type: () => Type<unknown>;
+      readonly kind: "alias";
+      readonly type: () => Type<unknown>;
     }
   | {
-      kind: "any";
+      readonly kind: "any";
     }
   | {
-      kind: "array";
-      schema: Schema;
+      readonly kind: "array";
+      readonly schema: Schema;
     }
   | {
-      kind: "boolean";
+      readonly kind: "boolean";
     }
   | {
-      kind: "literal";
-      value: boolean | number | string;
+      readonly kind: "literal";
+      readonly value: boolean | number | string;
     }
   | {
-      kind: "null";
+      readonly kind: "null";
     }
   | {
-      kind: "number";
+      readonly kind: "number";
     }
   | {
-      kind: "object";
-      properties: Record<string, ObjectSchemaProperty>;
+      readonly kind: "object";
+      readonly properties: Readonly<Record<string, ObjectSchemaProperty>>;
     }
   | {
-      kind: "string";
+      readonly kind: "string";
     }
   | {
-      kind: "undefined";
+      readonly kind: "undefined";
     }
   | {
-      kind: "union";
-      schemas: Schema[];
+      readonly kind: "union";
+      readonly schemas: ReadonlyArray<Schema>;
     };
 
 export type ObjectSchemaProperty = {
