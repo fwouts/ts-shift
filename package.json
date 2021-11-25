@@ -1,6 +1,6 @@
 {
   "name": "ts-shift",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "author": "François Wouts <f@zenc.io>",
   "license": "MIT",
   "bin": {
