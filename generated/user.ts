@@ -73,7 +73,9 @@ export type User = {
   };
   parent?: User;
   siblings: Array<User>;
-} & Type;
+} & {
+  type: "user";
+};
 
 export const User = Object.freeze({
   name: "User",
@@ -160,8 +162,16 @@ export const User = Object.freeze({
         },
       },
       {
-        kind: "alias",
-        type: () => Type,
+        kind: "object",
+        properties: {
+          ["type"]: {
+            schema: {
+              kind: "literal",
+              value: "user",
+            },
+            required: true,
+          },
+        },
       },
     ],
   },
@@ -292,49 +302,26 @@ export const User = Object.freeze({
       ...result,
       ...user_0,
     };
-    let user_1: Type;
-    user_1 = Type.create(__value__);
+    let user_1: {
+      type: "user";
+    };
+    if (typeof __value__ !== "object" || __value__ === null) {
+      fail("User is not an object", __value__);
+    }
+    {
+      const _user: any = __value__;
+      user_1 = {} as any;
+      let user_type: "user";
+      if (_user["type"] !== "user") {
+        fail(`User.type must equal "user"`, _user["type"]);
+      }
+      user_type = _user["type"];
+      user_1["type"] = user_type;
+    }
     result = {
       ...result,
       ...user_1,
     };
-    return result;
-  },
-} as const);
-
-export type Type = {
-  type: "user";
-};
-
-export const Type = Object.freeze({
-  name: "Type",
-  schema: {
-    kind: "object",
-    properties: {
-      ["type"]: {
-        schema: {
-          kind: "literal",
-          value: "user",
-        },
-        required: true,
-      },
-    },
-  },
-  create(__value__: Type): Type {
-    let result: Type;
-    if (typeof __value__ !== "object" || __value__ === null) {
-      fail("Type is not an object", __value__);
-    }
-    {
-      const _type: any = __value__;
-      result = {} as any;
-      let type_type: "user";
-      if (_type["type"] !== "user") {
-        fail(`Type.type must equal "user"`, _type["type"]);
-      }
-      type_type = _type["type"];
-      result["type"] = type_type;
-    }
     return result;
   },
 } as const);

@@ -237,8 +237,9 @@ export function parse(reader: Reader, filePaths: string[]) {
 }
 
 function hasTypeParameters(type: ts.Type) {
-  // Note: These properties are undocumented.
+  // Note: Some of these properties are undocumented.
   return (
+    (type.aliasTypeArguments || []).length > 0 ||
     ((type as any).typeParameters || []).length > 0 ||
     ((type as any).resolvedTypeArguments || []).length > 0
   );

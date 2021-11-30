@@ -13,7 +13,7 @@ export type User = {
   siblings: User[];
 } & Type<"user">;
 
-type Type<T extends string> = {
+export type Type<T extends string> = {
   type: T;
 };
 
