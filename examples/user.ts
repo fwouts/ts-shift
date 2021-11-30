@@ -4,6 +4,8 @@ export interface User {
   name: {
     first?: string;
     last: string;
+  } & {
+    middle?: string;
   };
   address: Address;
   test?: Box<string>;

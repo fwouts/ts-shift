@@ -62,6 +62,10 @@ export function generate(types: Record<string, Type>) {
       readonly kind: "boolean";
     }
   | {
+      readonly kind: "intersection";
+      readonly schemas: ReadonlyArray<Schema>;
+    }
+  | {
       readonly kind: "literal";
       readonly value: boolean | number | string;
     }
@@ -115,6 +119,13 @@ function generateSchema(type: Type): string {
     case "boolean":
       return `{
         kind: "boolean"
+      }`;
+    case "intersection":
+      return `{
+        kind: "intersection",
+        schemas: [
+          ${type.types.map((subtype) => generateSchema(subtype)).join(",")}
+        ]
       }`;
     case "literal":
       return `{
@@ -174,6 +185,10 @@ function generateTypeDeclaration(type: Type): string {
       return `Array<${generateTypeDeclaration(type.type)}>`;
     case "boolean":
       return "boolean";
+    case "intersection":
+      return type.types
+        .map((subtype) => `(${generateTypeDeclaration(subtype)})`)
+        .join("&");
     case "literal":
       return JSON.stringify(type.value);
     case "null":
@@ -241,6 +256,23 @@ function generateTypeSanitizer(
       }
       ${assignTo} = ${value};
       `.trim();
+    case "intersection":
+      return `
+        ${assignTo} = {} as any;
+        ${type.types
+          .map((subtype, i) => {
+            const subtypePath = [...path, i.toString(10)];
+            const subtypeVariableName = variableNameFromPath(subtypePath);
+            return `
+        let ${subtypeVariableName}: ${generateTypeDeclaration(subtype)};
+        ${generateTypeSanitizer(subtype, value, subtypeVariableName, path)}
+        ${assignTo} = {
+          ...${assignTo},
+          ...${subtypeVariableName}
+        };`;
+          })
+          .join("")}
+      `.trim();
     case "literal":
       return `
       if (${value} !== ${JSON.stringify(type.value)}) {
@@ -270,6 +302,7 @@ function generateTypeSanitizer(
         if (typeof(${value}) !== 'object' || ${value} === null) {
           fail("${path.join(".")} is not an object", ${value});
         }
+        {
         const _${localName}: any = ${value};
         ${assignTo} = {} as any;
         ${Object.entries(type.properties)
@@ -297,7 +330,7 @@ function generateTypeSanitizer(
             return statement;
           })
           .join("")}
-      `.trim();
+        }`.trim();
     case "string":
       return `
       if (typeof(${value}) !== 'string') {

@@ -331,6 +331,51 @@ describe("Parser", () => {
     }
   );
 
+  test(
+    "intersection types",
+    `
+    export type A = {
+      foo: string
+    } & B;
+    type B = {
+      bar: string
+    };
+    `,
+    {
+      A: {
+        kind: "intersection",
+        types: [
+          {
+            kind: "object",
+            properties: {
+              foo: {
+                required: true,
+                type: {
+                  kind: "string",
+                },
+              },
+            },
+          },
+          {
+            kind: "alias",
+            name: "B",
+          },
+        ],
+      },
+      B: {
+        kind: "object",
+        properties: {
+          bar: {
+            required: true,
+            type: {
+              kind: "string",
+            },
+          },
+        },
+      },
+    }
+  );
+
   function test(
     description: string,
     source: string,

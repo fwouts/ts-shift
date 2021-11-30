@@ -36,6 +36,10 @@ export type Type =
   | {
       kind: "union";
       types: Type[];
+    }
+  | {
+      kind: "intersection";
+      types: Type[];
     };
 
 export type ObjectProperty = {

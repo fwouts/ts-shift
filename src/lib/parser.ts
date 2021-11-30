@@ -225,6 +225,11 @@ export function parse(reader: Reader, filePaths: string[]) {
         kind: "union",
         types: type.types.map((subtype) => extractType(subtype)),
       };
+    } else if (type.isIntersection()) {
+      return {
+        kind: "intersection",
+        types: type.types.map((subtype) => extractType(subtype)),
+      };
     } else {
       throw new Error(`Unsupported type:\n${inspect(type)}`);
     }

@@ -34,26 +34,28 @@ export const Address = Object.freeze({
     if (typeof __value__ !== "object" || __value__ === null) {
       fail("Address is not an object", __value__);
     }
-    const _address: any = __value__;
-    result = {} as any;
-    let address_street: string;
-    if (typeof _address["street"] !== "string") {
-      fail("Address.street is not a string", _address["street"]);
+    {
+      const _address: any = __value__;
+      result = {} as any;
+      let address_street: string;
+      if (typeof _address["street"] !== "string") {
+        fail("Address.street is not a string", _address["street"]);
+      }
+      address_street = _address["street"];
+      result["street"] = address_street;
+      let address_city: string;
+      if (typeof _address["city"] !== "string") {
+        fail("Address.city is not a string", _address["city"]);
+      }
+      address_city = _address["city"];
+      result["city"] = address_city;
+      let address_postCode: number;
+      if (typeof _address["postCode"] !== "number") {
+        fail("Address.postCode is not a number", _address["postCode"]);
+      }
+      address_postCode = _address["postCode"];
+      result["postCode"] = address_postCode;
     }
-    address_street = _address["street"];
-    result["street"] = address_street;
-    let address_city: string;
-    if (typeof _address["city"] !== "string") {
-      fail("Address.city is not a string", _address["city"]);
-    }
-    address_city = _address["city"];
-    result["city"] = address_city;
-    let address_postCode: number;
-    if (typeof _address["postCode"] !== "number") {
-      fail("Address.postCode is not a number", _address["postCode"]);
-    }
-    address_postCode = _address["postCode"];
-    result["postCode"] = address_postCode;
     return result;
   },
 } as const);
@@ -62,6 +64,8 @@ export type User = {
   name: {
     first?: string;
     last: string;
+  } & {
+    middle?: string;
   };
   address: Address;
   test?: {
@@ -78,21 +82,37 @@ export const User = Object.freeze({
     properties: {
       ["name"]: {
         schema: {
-          kind: "object",
-          properties: {
-            ["first"]: {
-              schema: {
-                kind: "string",
+          kind: "intersection",
+          schemas: [
+            {
+              kind: "object",
+              properties: {
+                ["first"]: {
+                  schema: {
+                    kind: "string",
+                  },
+                  required: false,
+                },
+                ["last"]: {
+                  schema: {
+                    kind: "string",
+                  },
+                  required: true,
+                },
               },
-              required: false,
             },
-            ["last"]: {
-              schema: {
-                kind: "string",
+            {
+              kind: "object",
+              properties: {
+                ["middle"]: {
+                  schema: {
+                    kind: "string",
+                  },
+                  required: false,
+                },
               },
-              required: true,
             },
-          },
+          ],
         },
         required: true,
       },
@@ -141,68 +161,108 @@ export const User = Object.freeze({
     if (typeof __value__ !== "object" || __value__ === null) {
       fail("User is not an object", __value__);
     }
-    const _user: any = __value__;
-    result = {} as any;
-    let user_name: {
-      first?: string;
-      last: string;
-    };
-    if (typeof _user["name"] !== "object" || _user["name"] === null) {
-      fail("User.name is not an object", _user["name"]);
-    }
-    const _user_name: any = _user["name"];
-    user_name = {} as any;
-    if (_user_name["first"] !== undefined) {
-      let user_name_first: string;
-      if (typeof _user_name["first"] !== "string") {
-        fail("User.name.first is not a string", _user_name["first"]);
-      }
-      user_name_first = _user_name["first"];
-      user_name["first"] = user_name_first;
-    }
-    let user_name_last: string;
-    if (typeof _user_name["last"] !== "string") {
-      fail("User.name.last is not a string", _user_name["last"]);
-    }
-    user_name_last = _user_name["last"];
-    user_name["last"] = user_name_last;
-    result["name"] = user_name;
-    let user_address: Address;
-    user_address = Address.create(_user["address"]);
-    result["address"] = user_address;
-    if (_user["test"] !== undefined) {
-      let user_test: {
-        value: string;
+    {
+      const _user: any = __value__;
+      result = {} as any;
+      let user_name: {
+        first?: string;
+        last: string;
+      } & {
+        middle?: string;
       };
-      if (typeof _user["test"] !== "object" || _user["test"] === null) {
-        fail("User.test is not an object", _user["test"]);
+      user_name = {} as any;
+
+      let user_name_0: {
+        first?: string;
+        last: string;
+      };
+      if (typeof _user["name"] !== "object" || _user["name"] === null) {
+        fail("User.name is not an object", _user["name"]);
       }
-      const _user_test: any = _user["test"];
-      user_test = {} as any;
-      let user_test_value: string;
-      if (typeof _user_test["value"] !== "string") {
-        fail("User.test.value is not a string", _user_test["value"]);
+      {
+        const _user_name: any = _user["name"];
+        user_name_0 = {} as any;
+        if (_user_name["first"] !== undefined) {
+          let user_name_first: string;
+          if (typeof _user_name["first"] !== "string") {
+            fail("User.name.first is not a string", _user_name["first"]);
+          }
+          user_name_first = _user_name["first"];
+          user_name_0["first"] = user_name_first;
+        }
+        let user_name_last: string;
+        if (typeof _user_name["last"] !== "string") {
+          fail("User.name.last is not a string", _user_name["last"]);
+        }
+        user_name_last = _user_name["last"];
+        user_name_0["last"] = user_name_last;
       }
-      user_test_value = _user_test["value"];
-      user_test["value"] = user_test_value;
-      result["test"] = user_test;
+      user_name = {
+        ...user_name,
+        ...user_name_0,
+      };
+      let user_name_1: {
+        middle?: string;
+      };
+      if (typeof _user["name"] !== "object" || _user["name"] === null) {
+        fail("User.name is not an object", _user["name"]);
+      }
+      {
+        const _user_name: any = _user["name"];
+        user_name_1 = {} as any;
+        if (_user_name["middle"] !== undefined) {
+          let user_name_middle: string;
+          if (typeof _user_name["middle"] !== "string") {
+            fail("User.name.middle is not a string", _user_name["middle"]);
+          }
+          user_name_middle = _user_name["middle"];
+          user_name_1["middle"] = user_name_middle;
+        }
+      }
+      user_name = {
+        ...user_name,
+        ...user_name_1,
+      };
+      result["name"] = user_name;
+      let user_address: Address;
+      user_address = Address.create(_user["address"]);
+      result["address"] = user_address;
+      if (_user["test"] !== undefined) {
+        let user_test: {
+          value: string;
+        };
+        if (typeof _user["test"] !== "object" || _user["test"] === null) {
+          fail("User.test is not an object", _user["test"]);
+        }
+        {
+          const _user_test: any = _user["test"];
+          user_test = {} as any;
+          let user_test_value: string;
+          if (typeof _user_test["value"] !== "string") {
+            fail("User.test.value is not a string", _user_test["value"]);
+          }
+          user_test_value = _user_test["value"];
+          user_test["value"] = user_test_value;
+        }
+        result["test"] = user_test;
+      }
+      if (_user["parent"] !== undefined) {
+        let user_parent: User;
+        user_parent = User.create(_user["parent"]);
+        result["parent"] = user_parent;
+      }
+      let user_siblings: Array<User>;
+      if (!Array.isArray(_user["siblings"])) {
+        fail("User.siblings is not an array", _user["siblings"]);
+      }
+      user_siblings = [];
+      for (const item of _user["siblings"]) {
+        let user_siblings_item;
+        user_siblings_item = User.create(item);
+        user_siblings.push(user_siblings_item);
+      }
+      result["siblings"] = user_siblings;
     }
-    if (_user["parent"] !== undefined) {
-      let user_parent: User;
-      user_parent = User.create(_user["parent"]);
-      result["parent"] = user_parent;
-    }
-    let user_siblings: Array<User>;
-    if (!Array.isArray(_user["siblings"])) {
-      fail("User.siblings is not an array", _user["siblings"]);
-    }
-    user_siblings = [];
-    for (const item of _user["siblings"]) {
-      let user_siblings_item;
-      user_siblings_item = User.create(item);
-      user_siblings.push(user_siblings_item);
-    }
-    result["siblings"] = user_siblings;
     return result;
   },
 } as const);
@@ -270,6 +330,10 @@ export type Schema =
     }
   | {
       readonly kind: "boolean";
+    }
+  | {
+      readonly kind: "intersection";
+      readonly schemas: ReadonlyArray<Schema>;
     }
   | {
       readonly kind: "literal";
