@@ -1,6 +1,7 @@
 import { User } from "../generated/user";
 
-const payload = <any>{
+const payload = <User>{
+  type: "user",
   name: {
     last: "W",
   },

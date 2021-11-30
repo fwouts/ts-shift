@@ -40,30 +40,30 @@ export function generate(types: Record<string, Type>) {
     }
   }
 
-  export type Type<T> = {
+  export type TsShiftType<T> = {
     readonly name: string;
-    readonly schema: Schema;
+    readonly schema: TsShiftSchema;
     create(value: unknown): T;
   }
 
-  export type Schema =
+  export type TsShiftSchema =
   | {
       readonly kind: "alias";
-      readonly type: () => Type<unknown>;
+      readonly type: () => TsShiftType<unknown>;
     }
   | {
       readonly kind: "any";
     }
   | {
       readonly kind: "array";
-      readonly schema: Schema;
+      readonly schema: TsShiftSchema;
     }
   | {
       readonly kind: "boolean";
     }
   | {
       readonly kind: "intersection";
-      readonly schemas: ReadonlyArray<Schema>;
+      readonly schemas: ReadonlyArray<TsShiftSchema>;
     }
   | {
       readonly kind: "literal";
@@ -77,7 +77,7 @@ export function generate(types: Record<string, Type>) {
     }
   | {
       readonly kind: "object";
-      readonly properties: Readonly<Record<string, ObjectSchemaProperty>>;
+      readonly properties: Readonly<Record<string, TsShiftObjectSchemaProperty>>;
     }
   | {
       readonly kind: "string";
@@ -87,11 +87,11 @@ export function generate(types: Record<string, Type>) {
     }
   | {
       readonly kind: "union";
-      readonly schemas: ReadonlyArray<Schema>;
+      readonly schemas: ReadonlyArray<TsShiftSchema>;
     };
 
-  export type ObjectSchemaProperty = {
-    schema: Schema;
+  export type TsShiftObjectSchemaProperty = {
+    schema: TsShiftSchema;
     required: boolean;
   }
   `;
@@ -276,9 +276,9 @@ function generateTypeSanitizer(
     case "literal":
       return `
       if (${value} !== ${JSON.stringify(type.value)}) {
-        fail("${path.join(".")} must equal ${JSON.stringify(
+        fail(\`${path.join(".")} must equal ${JSON.stringify(
         type.value
-      )}", ${value});
+      )}\`, ${value});
       }
       ${assignTo} = ${value};
       `.trim();

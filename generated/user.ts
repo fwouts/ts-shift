@@ -73,27 +73,64 @@ export type User = {
   };
   parent?: User;
   siblings: Array<User>;
-};
+} & Type;
 
 export const User = Object.freeze({
   name: "User",
   schema: {
-    kind: "object",
-    properties: {
-      ["name"]: {
-        schema: {
-          kind: "intersection",
-          schemas: [
-            {
+    kind: "intersection",
+    schemas: [
+      {
+        kind: "object",
+        properties: {
+          ["name"]: {
+            schema: {
+              kind: "intersection",
+              schemas: [
+                {
+                  kind: "object",
+                  properties: {
+                    ["first"]: {
+                      schema: {
+                        kind: "string",
+                      },
+                      required: false,
+                    },
+                    ["last"]: {
+                      schema: {
+                        kind: "string",
+                      },
+                      required: true,
+                    },
+                  },
+                },
+                {
+                  kind: "object",
+                  properties: {
+                    ["middle"]: {
+                      schema: {
+                        kind: "string",
+                      },
+                      required: false,
+                    },
+                  },
+                },
+              ],
+            },
+            required: true,
+          },
+          ["address"]: {
+            schema: {
+              kind: "alias",
+              type: () => Address,
+            },
+            required: true,
+          },
+          ["test"]: {
+            schema: {
               kind: "object",
               properties: {
-                ["first"]: {
-                  schema: {
-                    kind: "string",
-                  },
-                  required: false,
-                },
-                ["last"]: {
+                ["value"]: {
                   schema: {
                     kind: "string",
                   },
@@ -101,69 +138,57 @@ export const User = Object.freeze({
                 },
               },
             },
-            {
-              kind: "object",
-              properties: {
-                ["middle"]: {
-                  schema: {
-                    kind: "string",
-                  },
-                  required: false,
-                },
-              },
+            required: false,
+          },
+          ["parent"]: {
+            schema: {
+              kind: "alias",
+              type: () => User,
             },
-          ],
-        },
-        required: true,
-      },
-      ["address"]: {
-        schema: {
-          kind: "alias",
-          type: () => Address,
-        },
-        required: true,
-      },
-      ["test"]: {
-        schema: {
-          kind: "object",
-          properties: {
-            ["value"]: {
+            required: false,
+          },
+          ["siblings"]: {
+            schema: {
+              kind: "array",
               schema: {
-                kind: "string",
+                kind: "alias",
+                type: () => User,
               },
-              required: true,
             },
+            required: true,
           },
         },
-        required: false,
       },
-      ["parent"]: {
-        schema: {
-          kind: "alias",
-          type: () => User,
-        },
-        required: false,
+      {
+        kind: "alias",
+        type: () => Type,
       },
-      ["siblings"]: {
-        schema: {
-          kind: "array",
-          schema: {
-            kind: "alias",
-            type: () => User,
-          },
-        },
-        required: true,
-      },
-    },
+    ],
   },
   create(__value__: User): User {
     let result: User;
+    result = {} as any;
+
+    let user_0: {
+      name: {
+        first?: string;
+        last: string;
+      } & {
+        middle?: string;
+      };
+      address: Address;
+      test?: {
+        value: string;
+      };
+      parent?: User;
+      siblings: Array<User>;
+    };
     if (typeof __value__ !== "object" || __value__ === null) {
       fail("User is not an object", __value__);
     }
     {
       const _user: any = __value__;
-      result = {} as any;
+      user_0 = {} as any;
       let user_name: {
         first?: string;
         last: string;
@@ -223,10 +248,10 @@ export const User = Object.freeze({
         ...user_name,
         ...user_name_1,
       };
-      result["name"] = user_name;
+      user_0["name"] = user_name;
       let user_address: Address;
       user_address = Address.create(_user["address"]);
-      result["address"] = user_address;
+      user_0["address"] = user_address;
       if (_user["test"] !== undefined) {
         let user_test: {
           value: string;
@@ -244,12 +269,12 @@ export const User = Object.freeze({
           user_test_value = _user_test["value"];
           user_test["value"] = user_test_value;
         }
-        result["test"] = user_test;
+        user_0["test"] = user_test;
       }
       if (_user["parent"] !== undefined) {
         let user_parent: User;
         user_parent = User.create(_user["parent"]);
-        result["parent"] = user_parent;
+        user_0["parent"] = user_parent;
       }
       let user_siblings: Array<User>;
       if (!Array.isArray(_user["siblings"])) {
@@ -261,7 +286,54 @@ export const User = Object.freeze({
         user_siblings_item = User.create(item);
         user_siblings.push(user_siblings_item);
       }
-      result["siblings"] = user_siblings;
+      user_0["siblings"] = user_siblings;
+    }
+    result = {
+      ...result,
+      ...user_0,
+    };
+    let user_1: Type;
+    user_1 = Type.create(__value__);
+    result = {
+      ...result,
+      ...user_1,
+    };
+    return result;
+  },
+} as const);
+
+export type Type = {
+  type: "user";
+};
+
+export const Type = Object.freeze({
+  name: "Type",
+  schema: {
+    kind: "object",
+    properties: {
+      ["type"]: {
+        schema: {
+          kind: "literal",
+          value: "user",
+        },
+        required: true,
+      },
+    },
+  },
+  create(__value__: Type): Type {
+    let result: Type;
+    if (typeof __value__ !== "object" || __value__ === null) {
+      fail("Type is not an object", __value__);
+    }
+    {
+      const _type: any = __value__;
+      result = {} as any;
+      let type_type: "user";
+      if (_type["type"] !== "user") {
+        fail(`Type.type must equal "user"`, _type["type"]);
+      }
+      type_type = _type["type"];
+      result["type"] = type_type;
     }
     return result;
   },
@@ -310,30 +382,30 @@ export class ValidationError extends Error {
   }
 }
 
-export type Type<T> = {
+export type TsShiftType<T> = {
   readonly name: string;
-  readonly schema: Schema;
+  readonly schema: TsShiftSchema;
   create(value: unknown): T;
 };
 
-export type Schema =
+export type TsShiftSchema =
   | {
       readonly kind: "alias";
-      readonly type: () => Type<unknown>;
+      readonly type: () => TsShiftType<unknown>;
     }
   | {
       readonly kind: "any";
     }
   | {
       readonly kind: "array";
-      readonly schema: Schema;
+      readonly schema: TsShiftSchema;
     }
   | {
       readonly kind: "boolean";
     }
   | {
       readonly kind: "intersection";
-      readonly schemas: ReadonlyArray<Schema>;
+      readonly schemas: ReadonlyArray<TsShiftSchema>;
     }
   | {
       readonly kind: "literal";
@@ -347,7 +419,9 @@ export type Schema =
     }
   | {
       readonly kind: "object";
-      readonly properties: Readonly<Record<string, ObjectSchemaProperty>>;
+      readonly properties: Readonly<
+        Record<string, TsShiftObjectSchemaProperty>
+      >;
     }
   | {
       readonly kind: "string";
@@ -357,10 +431,10 @@ export type Schema =
     }
   | {
       readonly kind: "union";
-      readonly schemas: ReadonlyArray<Schema>;
+      readonly schemas: ReadonlyArray<TsShiftSchema>;
     };
 
-export type ObjectSchemaProperty = {
-  schema: Schema;
+export type TsShiftObjectSchemaProperty = {
+  schema: TsShiftSchema;
   required: boolean;
 };
